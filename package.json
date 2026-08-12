@@ -1,0 +1,13 @@
+{
+  "name": "seerah-qa-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Zero-hallucination Seerah Q&A web app grounded in the IslamicDesk Shamail + Seerah Timeline corpus.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "phase0": "node scripts/verify-api-schema.mjs"
+  }
+}

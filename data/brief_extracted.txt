@@ -1,0 +1,129 @@
+
+===== PAGE 1 =====
+Role Brief — Developers / AI
+Engineers ڈویلپرز / اے آئی انجینئڈویلپرز / اے آئی انجینئڈویلپرز / ا
+ROLE KEY
+ai_bot
+SORT ORDER
+5
+REQUIRES REVIEW
+No
+ICON KEY
+robot
+Title / عنوعنوان
+English 
+Developers / AI Engineers ڈویلپرز / اے آئی انجینئڈویلپرز / اے آئی انجینئڈویلپرز 
+*(App may also show: AI — Seerah Content Bot / اے آئی — سیرت مواد ب)* 
+Brief / بربریف
+ENGLISH
+Build a conversational Q&A bot grounded ONLY in the fixed corpus (Shamail 120
+entries + named course content). Every answer must cite its source entry.
+صرصرف مقررہ ذخیرہمقررہ ذخیرہمقرر پر مبنی سوال و جواب بوٹ بنائیںصرصرصرصرصرصرصرصرمقرر20شمائل کی 
+مقررصرصرصر۔ ہماخذ اندراج کا حوالہمقرر۔ ہصرصر
+Deliverables / نتائج و ذمہ داریماخذ اندراج کا حوالہمقرر
+ENGLISH
+Working prototype on the chosen platform. Demo must show:
+In-corpus answer with citation
+Out-of-corpus question → redirect / safe fallback
+Ruling / fatwa-style question refused → redirect to an alim
+Persistent disclaimer always visible
+• 
+• 
+• 
+• 
+ROLE BRIEF — DEVELOPERS / AI ENGINEERS
+Page 1 of 4
+===== PAGE 2 =====
+منتخب پلیٹ فارم پر کام کرنے والا پروٹوٹائپ۔ ڈیمو میں دکھائیصرصرصر۔ ہصرصرصرصرصرصرصر
+صرذخیر جواب مع حوالہصرصرصر
+صرذخیربریفصرصرصرصرصرصرصر
+فتویٰ / حفتویٰ / حکمصرصرصرصرصرصرصرصرصر
+صرڈویلپرز / اصرصر جواب مع حوالہ
+Topics / پلیٹ فارمز (3)مقررفتویٰ / حکمپلیٹ فارمز (
+Participants choose one platform.
+# Key English 
+1 in_app In-app chat widget — Seerah Q&A inside
+the Seerah app
+صرصرصرصرصرصر
+صرصرصرصر
+2 whatsapp WhatsApp bot — Seerah Q&A on
+WhatsApp
+صرصرصرصرصرصر
+صرصرصر
+3 web Web chat — Seerah Q&A on a website chat
+صرصرصرصرصرصر
+صرصرصر
+Corpus APIs (use these)
+Base: /api/seerathon/corpus
+Method Path Purpose
+GET /meta Counts, version, disclaimer , usage rules
+GET /shamail Shamail list (paginated)
+GET /shamail/:id One Shamail entry
+GET /timeline Seerah Timeline list (paginated, plain text)
+GET /timeline/:id One timeline entry
+GET /courses Course titles index only
+• 
+• 
+• 
+• 
+ROLE BRIEF — DEVELOPERS / AI ENGINEERS
+Page 2 of 4
+===== PAGE 3 =====
+QUERY PARAMS
+page, limit (max 120)
+q — search text
+category_id — Shamail only
+section — Timeline only
+include_hikayat=true — Shamail only (optional longer text)
+EXAMPLE REQUESTS
+GET /api/seerathon/corpus/meta
+GET /api/seerathon/corpus/shamail?limit=120
+GET /api/seerathon/corpus/timeline?limit=50
+GET /api/seerathon/corpus/courses 
+* Answer corpus = Shamail + Timeline. Courses are index/reference only.
+CORE RULES (ENGLISH)
+Bot answers only from approved Shamail + course corpus
+No free-form religious rulings
+Always cite source
+Always show disclaimer
+پلیٹ فارمز (3)عنوانبریف
+صرصرصرذخیرصرصرصرصرصرصرصرف صر
+صرصرصر جواب مع حوالہ
+ جواب مع حوالہصرصرصر
+صرصر جواب مع حوالہصرصر
+Designer Notes / ایڈیٹر کی ہدا
+ENGLISH
+Visual language: chat UI, soft AI glow without sci-fi excess [cite: 13]
+Show citation chips / source cards in mockups [cite: 13]
+Platform badges: In-App / WhatsApp / Web [cite: 13]
+Trust-first messaging over “cool AI” hype [cite: 13]
+ویژول زبان: چیٹ یو آئی، ہلکا اے آئی احساس بغیر سائنس فکشن زیادتی [cite: 13]ite: 13صرصرصرصرصرصرصرصرصرصرصرصرمنتخب پلیٹ فارم پر کام کرنے والا پروٹوٹائپ۔ ڈیمو میں دکھائیصر
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+ROLE BRIEF — DEVELOPERS / AI ENGINEERS
+Page 3 of 4
+===== PAGE 4 =====
+ویژول زبان: چیٹ یو آئی، ہلکا اے آئی احساس بغیر سائنس فکشن زیادتی [cite: 13]ite: 13صرصرصرصرصر جواب مع حوالہصرصرصر
+ویژول زبان: چیٹ یو آئی، ہلکا اے آئی احساس بغیر سائنس فکشن زیادتی [cite: 13]ite: 13صرصرصرصرصرصرصرصرمنتخب پلیٹ فارم پر کام کرنے والا پروٹوٹائپ۔ ڈیمو میں دکھائیصرصر
+صرصرصرصر“کول اعنوانویژول زبان: چیٹ یو آئی، ہلکا اے آئی احساس بغیر سائنس فکشن زیادتی [cite: 13]ite: 13صرصرصرصر
+• 
+• 
+• 
+ROLE BRIEF — DEVELOPERS / AI ENGINEERS
+Page 4 of 4

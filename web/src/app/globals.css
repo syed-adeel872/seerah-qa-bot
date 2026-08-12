@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0b100d;
+  --foreground: #e9f0ea;
+  --muted: #9fb3a6;
+  --accent: #34d399;
+  --accent-strong: #10b981;
+  --accent-soft: rgba(52, 211, 153, 0.14);
+  --border: #233229;
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.12);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --card: #121a15;
+  --card-hi: #16211a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(16, 185, 129, 0.12), transparent 60%),
+    radial-gradient(900px 500px at 85% 0%, rgba(251, 191, 36, 0.06), transparent 55%),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-ur {
+  font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", "Alvi Nastaleeq",
+    "Urdu Typesetting", var(--font-geist-sans), serif;
+}
+
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+/* soft, non-sci-fi AI glow for assistant cards */
+@keyframes softGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(52, 211, 153, 0.16),
+      0 12px 44px -18px rgba(52, 211, 153, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(52, 211, 153, 0.3),
+      0 16px 56px -14px rgba(52, 211, 153, 0.5);
+  }
+}
+
+.glow-card {
+  animation: softGlow 4.5s ease-in-out infinite;
+}
+
+@keyframes typingDot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.typing-dot {
+  animation: typingDot 1.3s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3a2f;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -18,6 +18,10 @@ export type EvalExpect =
       allowedCitationIds?: string[];
       /** If set, the top-scoring doc id must equal this. */
       topDocId?: string;
+      /** If set, the answer text must contain this token. */
+      requireTextToken?: string;
+      /** If true, the answer text must contain no Arabic-script characters. */
+      noArabicScript?: boolean;
     }
   | { kind: "out_of_corpus" }
   | { kind: "blocked"; sub: "fatwa" | "injection" };
@@ -53,6 +57,50 @@ export const EVAL_CASES: EvalCase[] = [
   { id: "ur-mohabbat", question: "نبی ﷺ بچوں سے محبت کرتے تھے؟", expect: { kind: "answered", lang: "ur" } },
   { id: "roman-sabr", question: "huzoor ka sabr kaisa tha?", expect: { kind: "answered", lang: "roman-ur" } },
   { id: "roman-zindagi", question: "nabi ki zindagi ke bare mein batao", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-khana", question: "huzoor ka khana kaisa tha?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-khaate", question: "huzoor kya khaate thay?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-saalan", question: "huzoor ka saalan kaisa tha?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-gosht", question: "huzoor gosht khaate thay?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-peena", question: "huzoor kya peete thay?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-qad", question: "huzoor ka qad kaisa tha?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-hulya", question: "huzoor ka hulya kaisa tha?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-surat", question: "huzoor ki surat kaisi thi?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-jung", question: "jung e badr ke bare mein batao", expect: { kind: "answered", lang: "roman-ur", requireSource: "timeline" } },
+  { id: "roman-jung2", question: "nabi ne kaun si jung ladi?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-kapray", question: "huzoor ke kapray kaisay thay?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-libas", question: "nabi ka libas kaisa tha?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-rang", question: "huzoor ka rang kaisa tha?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-huliya", question: "huzoor ka huliya kaisa tha?", expect: { kind: "answered", lang: "roman-ur" } },
+  { id: "roman-khaybar", question: "khaybar ki jung ke bare mein batao", expect: { kind: "answered", lang: "roman-ur", requireSource: "timeline" } },
+  { id: "roman-badr", question: "jung e badr mein kya hua?", expect: { kind: "answered", lang: "roman-ur", requireSource: "timeline" } },
+  { id: "ur-rang", question: "نبی ﷺ کا رنگ کیسا تھا؟", expect: { kind: "answered", lang: "ur" } },
+  { id: "ur-khaybar", question: "جنگ خیبر کا ذکر بتاؤ", expect: { kind: "answered", lang: "ur", requireSource: "timeline" } },
+  { id: "ur-khana", question: "نبی ﷺ کا کھانا کیسا تھا؟", expect: { kind: "answered", lang: "ur" } },
+  { id: "ur-saalan", question: "نبی ﷺ کا سالن کیسا تھا؟", expect: { kind: "answered", lang: "ur" } },
+  { id: "ur-peena", question: "نبی ﷺ کیا پیتے تھے؟", expect: { kind: "answered", lang: "ur" } },
+  { id: "ur-qad", question: "نبی ﷺ کا قد کیسا تھا؟", expect: { kind: "answered", lang: "ur" } },
+
+  // ---- in-corpus: semantic (novel phrasings) -------------------------------
+  // These paraphrase content words not on any hardcoded synonym list; the
+  // embedding layer is what keeps the intended entry on top.
+  { id: "en-sem-gravy", question: "the blessed condiment of vinegar which the prophet praised", expect: { kind: "answered", topDocId: "675808d18e7a0c001fc63541" } },
+  { id: "en-sem-stature", question: "how tall was the prophet and what was his physical build", expect: { kind: "answered", topDocId: "674ed107f8a58b001f4e554f" } },
+  { id: "en-sem-drink", question: "what was the favorite drink of our dear prophet", expect: { kind: "answered", topDocId: "67595af24e2949e9ad53c277" } },
+  // Indirect English / slang that needs LLM query rewriting + the relaxed
+  // title anchor: "metal gear" -> armor, "war gear" -> armor. These match only
+  // the document body, so they also exercise the semantic titleless path.
+  { id: "en-sem-armor", question: "metal gear during war", expect: { kind: "answered", topDocId: "6754230f1ce008001f091239" } },
+  { id: "en-sem-armor2", question: "what protection did the prophet wear going into battle", expect: { kind: "answered", topDocId: "6754230f1ce008001f091239" } },
+
+  // ---- in-corpus: language mirroring (roman-Urdu answers stay roman) --------
+  { id: "roman-saalan-mirror", question: "huzoor ka saalan kaisa tha?", expect: { kind: "answered", lang: "roman-ur", requireTextToken: "salan", noArabicScript: true } },
+  { id: "roman-khana-mirror", question: "huzoor ka khana kaisa tha?", expect: { kind: "answered", lang: "roman-ur", noArabicScript: true } },
+  { id: "roman-qad-mirror", question: "huzoor ka qad kaisa tha?", expect: { kind: "answered", lang: "roman-ur", requireTextToken: "qad", noArabicScript: true } },
+  { id: "roman-peena-mirror", question: "huzoor kya peete thay?", expect: { kind: "answered", lang: "roman-ur", noArabicScript: true } },
+  // Complex Roman Urdu: "zirah" (armor) and "pehnawa" (clothing) — no direct
+  // title token match, so these need the LLM rewrite + relaxed semantic anchor.
+  { id: "roman-zirah-mirror", question: "huzoor ne jung mein zirah pehni thi?", expect: { kind: "answered", lang: "roman-ur", topDocId: "6754230f1ce008001f091239", requireTextToken: "zirah", noArabicScript: true } },
+  { id: "roman-pehnawa-mirror", question: "Aqa Kareem ﷺ pehnawa kaisa tha?", expect: { kind: "answered", lang: "roman-ur", topDocId: "675176a1d2c9eb00202fca07", requireTextToken: "libas", noArabicScript: true } },
 
   // ---- out-of-corpus --------------------------------------------------------
   { id: "out-crypto", question: "What is blockchain technology and how does it work?", expect: { kind: "out_of_corpus" } },

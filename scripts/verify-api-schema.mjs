@@ -89,12 +89,12 @@ record('fact', 'meta.counts', JSON.stringify(meta?.counts));
 // ---------------------------------------------------------------------------
 // helpers for list endpoints
 // ---------------------------------------------------------------------------
-async function fetchAll(path, pageSize, label) {
+async function fetchAll(path, pageSize, label, extra = '') {
   const collected = [];
   let page = 1;
   let total = null;
   for (let i = 0; i < 30; i++) {
-    const res = await getJson(`${path}?limit=${pageSize}&page=${page}`);
+    const res = await getJson(`${path}?limit=${pageSize}&page=${page}${extra}`);
     const d = res.json?.data;
     if (!d || !Array.isArray(d.items)) {
       record('probe', `${label} page ${page}`, `HTTP ${res.status}, no items array: ${String(res.json?.msg || res.raw.slice(0, 60))}`, false);
@@ -117,7 +117,7 @@ async function fetchAll(path, pageSize, label) {
 // ---------------------------------------------------------------------------
 // 2. shamail list + filters
 // ---------------------------------------------------------------------------
-const shamailAll = await fetchAll('/shamail', 120, 'shamail');
+const shamailAll = await fetchAll('/shamail', 120, 'shamail', '&include_hikayat=true');
 getJson('/shamail?limit=999').then((r) => {
   const d = r.json?.data;
   assert(r.json?.error === false, 'shamail?limit=999 succeeds', String(r.json?.error));

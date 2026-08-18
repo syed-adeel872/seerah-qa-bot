@@ -1,4 +1,5 @@
 import type { IndexedDoc } from "../corpus/schema";
+import { urduToRoman } from "../l10n/translit";
 
 /**
  * Deterministic, zero-hallucination answer builder.
@@ -6,6 +7,8 @@ import type { IndexedDoc } from "../corpus/schema";
  * documents — no invented hadith, no opinions. Used by default (offline)
  * and as the fallback whenever an LLM result fails post-verification.
  */
+
+export type AnswerTarget = "en" | "ur" | "roman-ur";
 
 function trimExcerpt(text: string, max = 420): string {
   const t = (text || "").replace(/\s+/g, " ").trim();
@@ -15,12 +18,22 @@ function trimExcerpt(text: string, max = 420): string {
 }
 
 /** Split an entry's plain text into paragraphs. */
-function paragraphs(lang: "en" | "ur", doc: IndexedDoc): string[] {
-  const text = lang === "ur" ? doc.textUr : doc.textEn;
+function paragraphs(lang: AnswerTarget, doc: IndexedDoc): string[] {
+  let text: string;
+  if (lang === "en") text = doc.textEn;
+  else if (lang === "ur") text = doc.textUr;
+  else text = urduToRoman(doc.textUr);
   return text
     .split(/\n{2,}/)
     .map((s) => s.replace(/\s+/g, " ").trim())
     .filter(Boolean);
+}
+
+/** Roman-Urdu title: the corpus's own slug.romanUrdu (e.g. huzoor-ka-salan-mubarak). */
+function romanTitle(doc: IndexedDoc): string {
+  const slug = doc.citation.slug?.romanUrdu;
+  if (slug) return slug.replace(/-/g, " ").trim();
+  return urduToRoman(doc.titleUr) || doc.titleEn;
 }
 
 /**
@@ -30,17 +43,23 @@ function paragraphs(lang: "en" | "ur", doc: IndexedDoc): string[] {
  */
 export function generateDeterministicAnswer(
   sources: Array<{ doc: IndexedDoc }>,
-  lang: "en" | "ur",
+  lang: AnswerTarget,
 ): string {
-  const ur = lang === "ur";
   const parts: string[] = [];
 
-  parts.push(ur ? "ذخیرے (شمائل + سیرت ٹائم لائن) سے ماخوذ جواب" : "Based on the Seerah & Shamail corpus");
+  const intro =
+    lang === "ur"
+      ? "ذخیرے (شمائل + سیرت ٹائم لائن) سے ماخوذ جواب"
+      : lang === "roman-ur"
+        ? "Seerah aur Shamail corpus se makhuz jawab"
+        : "Based on the Seerah & Shamail corpus";
+  parts.push(intro);
   parts.push("");
 
   sources.forEach(({ doc }, i) => {
     const n = i + 1;
-    const title = lang === "ur" ? doc.titleUr || doc.titleEn : doc.titleEn;
+    const title =
+      lang === "ur" ? doc.titleUr || doc.titleEn : lang === "roman-ur" ? romanTitle(doc) : doc.titleEn;
     parts.push(`[${n}] ${title}`);
     parts.push("");
 
@@ -64,7 +83,9 @@ export function generateDeterministicAnswer(
       }
       const picked = bullets.slice(0, 2);
       if (picked.length > 0) {
-        parts.push(ur ? "اہم نکات" : "Key points");
+        const keyHeader =
+          lang === "ur" ? "اہم نکات" : lang === "roman-ur" ? "Ehmi nikat" : "Key points";
+        parts.push(keyHeader);
         parts.push("");
         for (const b of picked) {
           parts.push(`- ${trimExcerpt(b, 220)}`);
@@ -78,11 +99,14 @@ export function generateDeterministicAnswer(
     }
   });
 
-  parts.push(
-    ur
+  const closing =
+    lang === "ur"
       ? "مندرجہ بالا جواب صرف اوپر دیے گئے ذخیرے کے اندراجات سے لیا گیا ہے؛ ماخذ کے کارڈ نیچے موجود ہیں۔"
-      : "Every statement above is drawn only from the cited corpus entries; source cards are listed below.",
-  );
+      : lang === "roman-ur"
+        ? "Upar diya gaya jawab sirf in corpus entries se liya gaya hai; sources ke cards neeche hain."
+        : "Every statement above is drawn only from the cited corpus entries; source cards are listed below.";
+
+  parts.push(closing);
 
   return parts.join("\n");
 }

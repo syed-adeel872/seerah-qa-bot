@@ -1,8 +1,8 @@
 # Schema Verification Report
 
-- Generated: 2026-08-11T16:31:31.826Z
+- Generated: 2026-08-15T10:08:57.178Z
 - Base URL: https://api.islamicdesk.com/api/seerathon/corpus
-- Snapshot SHA-256: `d4016a4f935f327c20501aff1eb5a83f582e2f04ae4480b6abb0d9044551a8eb`
+- Snapshot SHA-256: `71adf67ea8ffa94e2874303b4dd6b20ba07923aa286678bbc26179d123f67ffb`
 - Assertion failures: 0
 
 ## Endpoint probes
@@ -22,12 +22,12 @@
 | probe | shamail?q=birth | PASS — total=2, HTTP 200 |
 | assert | shamail no-match q -> total:0 | PASS — status=200, total=0 |
 | assert | shamail no-match q -> pages:0 | PASS — pages=0 |
-| assert | shamail?category_id=1 filters | PASS — total=17 |
-| probe | shamail?category_id=abc | PASS — error=false, msg=Corpus shamail fetched successfully, HTTP 200 |
 | assert | shamail?limit=999 succeeds | PASS — false |
 | assert | shamail limit clamps to 120 | PASS — limit=120 |
 | assert | shamail total = 120 | PASS — total=120 |
 | fact | shamail limit=999 result | PASS — limit=120, total=120 |
+| assert | shamail?category_id=1 filters | PASS — total=17 |
+| probe | shamail?category_id=abc | PASS — error=false, msg=Corpus shamail fetched successfully, HTTP 200 |
 | probe | shamail?include_hikayat=true | PASS — hikayat found in item: true |
 | assert | shamail/:id good id | PASS — HTTP 200 |
 | assert | shamail/:id returns data.item | PASS — ["item","corpus_version"] |
@@ -41,8 +41,8 @@
 | assert | timeline/:id bad id -> HTTP 200 error:true | PASS — status=200 error=true |
 | probe | timeline/:id bad id | PASS — msg=Timeline entry not found |
 | assert | courses returns items | PASS — ["items","total","page","limit","pages","note","corpus_version"] |
-| fact | snapshot written | PASS — data/corpus.snapshot.json (541694 bytes) |
-| fact | snapshot sha256 | PASS — d4016a4f935f327c20501aff1eb5a83f582e2f04ae4480b6abb0d9044551a8eb |
+| fact | snapshot written | PASS — data/corpus.snapshot.json (1117352 bytes) |
+| fact | snapshot sha256 | PASS — 71adf67ea8ffa94e2874303b4dd6b20ba07923aa286678bbc26179d123f67ffb |
 
 ## Snapshot summary
 

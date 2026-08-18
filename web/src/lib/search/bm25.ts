@@ -40,6 +40,8 @@ export class BM25Index {
   private df = new Map<FieldName, Map<string, number>>();
   private docLen = new Map<string, Map<FieldName, number>>();
   private avgLen = new Map<FieldName, number>();
+  /** Unique conflated token groups per doc across ALL fields (grounding checks). */
+  private docGroups = new Map<string, Set<string>>();
 
   constructor(docs: IndexedDoc[]) {
     this.docs = docs;
@@ -60,6 +62,11 @@ export class BM25Index {
       for (const field of Object.keys(FIELD_WEIGHTS) as FieldName[]) {
         this.docLen.get(doc.id)!.set(field, perField.get(field)!.length);
       }
+      const groups = new Set<string>();
+      for (const field of Object.keys(FIELD_WEIGHTS) as FieldName[]) {
+        for (const t of perField.get(field)!) groups.add(t);
+      }
+      this.docGroups.set(doc.id, groups);
     }
 
     this.docCount = docs.length;
@@ -85,6 +92,11 @@ export class BM25Index {
     const dfMap = this.df.get(field)!;
     const df = dfMap.get(term) ?? 0;
     return Math.log(1 + (this.docCount - df + 0.5) / (df + 0.5));
+  }
+
+  /** Unique conflated token groups present in a document (any field). */
+  docGroupsOf(docId: string): Set<string> {
+    return this.docGroups.get(docId) ?? new Set<string>();
   }
 
   search(query: string, params: SearchParams = {}): SearchHit[] {

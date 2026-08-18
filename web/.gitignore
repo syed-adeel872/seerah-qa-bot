@@ -40,3 +40,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel
+
+# local corpus snapshot copy — the committed snapshot lives at ../data/
+/data/*
+!/data/embeddings.json
+
+.env*

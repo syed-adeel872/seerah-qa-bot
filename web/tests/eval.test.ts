@@ -55,6 +55,10 @@ function evaluateExpectation(c: EvalCase, a: Answer): EvalResult {
     problems.push(`topDocId mismatch: expected ${ex.topDocId}, got ${a.matched?.topDocId}`);
   if (ex.allowedCitationIds && !a.citations.some((ci) => ex.allowedCitationIds!.includes(ci.id)))
     problems.push(`no allowed citation`);
+  if (ex.requireTextToken && !a.text.includes(ex.requireTextToken))
+    problems.push(`text missing token "${ex.requireTextToken}"`);
+  if (ex.noArabicScript && /[\u0600-\u06FF]/.test(a.text))
+    problems.push(`text contains Arabic-script characters (not romanized)`);
 
   return {
     case: c,
@@ -67,11 +71,13 @@ function evaluateExpectation(c: EvalCase, a: Answer): EvalResult {
 describe("answer pipeline — eval suite", () => {
   const results: EvalResult[] = [];
 
-  it("runs all eval cases", async () => {
-    for (const c of EVAL_CASES) {
-      const a = await answerQuestion(c.question);
-      results.push(evaluateExpectation(c, a));
-    }
+  it(
+    "runs all eval cases",
+    async () => {
+      for (const c of EVAL_CASES) {
+        const a = await answerQuestion(c.question);
+        results.push(evaluateExpectation(c, a));
+      }
 
     const failures = results.filter((r) => !r.pass);
     const answered = results.filter((r) => r.answer?.status === "answered");
@@ -98,5 +104,7 @@ describe("answer pipeline — eval suite", () => {
 
     // hard gate: at most one failing eval case
     expect(failures.length).toBeLessThanOrEqual(1);
-  });
+    },
+    300000,
+  );
 });

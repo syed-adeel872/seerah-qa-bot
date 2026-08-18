@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import {
@@ -8,6 +9,9 @@ import {
   type TimelineEntry,
   type Citation,
 } from "./schema";
+
+/** Base URL of the spec-mandated corpus API (see "Developers, AI Engineer Brief.pdf"). */
+export const CORPUS_API_BASE = "https://api.islamicdesk.com/api/seerathon/corpus";
 
 export interface Corpus {
   meta: CorpusSnapshot["meta"];
@@ -164,4 +168,101 @@ export function buildCorpus(snapshot: CorpusSnapshot): Corpus {
     generatedAt: snapshot.generatedAt,
     corpusVersion: snapshot.corpus_version,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Live corpus fetch (spec-mandated: /api/seerathon/corpus at runtime)
+// ---------------------------------------------------------------------------
+
+interface ApiListResponse {
+  items?: unknown[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  pages?: number;
+}
+
+async function apiGet(path: string): Promise<unknown> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(`${CORPUS_API_BASE}${path}`, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as { error?: boolean; msg?: string; data?: unknown };
+      if (json.error) throw new Error(json.msg ?? "corpus API error");
+      return json.data;
+    } catch (err) {
+      lastErr = err;
+      if (attempt === 0) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
+/** Fetch every page of a list endpoint (page, limit, plus extra query params). */
+async function apiFetchAll(
+  endpoint: "shamail" | "timeline",
+  limit: number,
+  extra: Record<string, string> = {},
+): Promise<unknown[]> {
+  const collected: unknown[] = [];
+  let page = 1;
+  for (let i = 0; i < 30; i++) {
+    const params = new URLSearchParams({ limit: String(limit), page: String(page) });
+    for (const [k, v] of Object.entries(extra)) params.set(k, v);
+    const data = (await apiGet(`/${endpoint}?${params.toString()}`)) as ApiListResponse;
+    if (!Array.isArray(data.items)) break;
+    collected.push(...data.items);
+    const pages = data.pages ?? 0;
+    if (page >= pages || pages === 0) break;
+    page += 1;
+  }
+  return collected;
+}
+
+/**
+ * Pull the full corpus live from /api/seerathon/corpus using the spec's query
+ * parameters (limit max 120; include_hikayat=true for Shamail longer text).
+ * Validates the result against the same zod schema as the snapshot.
+ */
+export async function fetchCorpusFromAPI(): Promise<Corpus> {
+  const meta = (await apiGet("/meta")) as CorpusSnapshot["meta"];
+  const shamail = await apiFetchAll("shamail", 120, { include_hikayat: "true" });
+  const timeline = await apiFetchAll("timeline", 50);
+  const courses = (await apiGet("/courses")) as { items?: unknown[] };
+  const items = courses.items ?? [];
+
+  const snapshot = CorpusSnapshotSchema.parse({
+    meta: {
+      version: meta?.version ?? "unknown",
+      sources: meta?.sources ?? ["shamail", "seerah_timeline", "courses_index"],
+      disclaimer: meta?.disclaimer ?? { en: "", ur: "" },
+      rate_limit: meta?.rate_limit ?? { window_seconds: 60, max_per_ip: 60 },
+      counts: meta?.counts ?? {},
+    },
+    shamail,
+    timeline,
+    courses: items,
+    generatedAt: new Date().toISOString(),
+    corpus_version: meta?.version ?? "unknown",
+    schema_verified: true,
+    sha256: "",
+  }) as CorpusSnapshot;
+  snapshot.sha256 = createHash("sha256")
+    .update(
+      JSON.stringify({
+        corpus_version: snapshot.corpus_version,
+        shamail,
+        timeline,
+        courses: items,
+      }),
+    )
+    .digest("hex");
+
+  return buildCorpus(snapshot);
 }

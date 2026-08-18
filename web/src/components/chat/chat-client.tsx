@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { cn } from "@/lib/utils";
 import { SAMPLE_QUESTIONS } from "./samples";
+import { redirectInfo } from "@/lib/guardrails/blockers";
 import type { Answer } from "@/lib/engine/answer";
 import type { Citation } from "@/lib/corpus/schema";
 
@@ -85,17 +86,17 @@ function AssistantBubble({ m }: { m: Message }) {
     <div className="flex justify-start">
       <div
         className={cn(
-          "max-w-[85%] rounded-2xl border px-4 py-3",
+          "max-w-[85%] rounded-2xl border px-5 py-4 backdrop-blur-md",
           isBlocked && answer.kind === "fatwa"
             ? "border-amber-400/25 bg-warn-soft"
             : isBlocked
               ? "border-amber-400/20 bg-warn-soft"
               : isOut
-                ? "border-white/10 bg-card"
-                : "border-emerald-500/20 bg-card glow-card",
+                ? "border-white/10 bg-white/[0.03]"
+                : "border-emerald-500/15 bg-emerald-500/[0.07] glow-card",
         )}
       >
-        <div className={cn("text-sm leading-relaxed whitespace-pre-wrap", isUrdu && "font-ur rtl text-[15px]")}>
+        <div className={cn("text-sm leading-7 whitespace-pre-wrap", isUrdu && "font-ur rtl text-[15px] leading-8")}>
           {answer.text}
         </div>
 
@@ -105,6 +106,23 @@ function AssistantBubble({ m }: { m: Message }) {
             <SourceList citations={answer.citations} />
             <div className="mt-2 flex items-center gap-2 text-[10px] text-muted/80">
               <span>engine: {answer.engine}</span>
+              {answer.semantic && (
+                <>
+                  <span>·</span>
+                  <span>
+                    semantic: {answer.semantic.available ? "ok" : "unavailable"}
+                    {answer.semantic.used ? " (used)" : ""}
+                  </span>
+                </>
+              )}
+              {answer.rewrittenQuery && (
+                <>
+                  <span>·</span>
+                  <span className="max-w-[220px] truncate" title={answer.rewrittenQuery}>
+                    rewrite: “{answer.rewrittenQuery}”
+                  </span>
+                </>
+              )}
               <span>·</span>
               <span>corpus v{answer.corpusVersion}</span>
               {answer.matched && (
@@ -118,10 +136,23 @@ function AssistantBubble({ m }: { m: Message }) {
         )}
 
         {isBlocked && (
-          <div className="mt-2 rounded-lg border border-amber-400/20 bg-amber-400/5 px-2.5 py-1.5 text-[11px] text-amber-200/90">
-            {answer.kind === "fatwa"
-              ? "Consult a qualified Islamic scholar (Aalim/Mufti) · کسی مستند عالمِ دین / مفتی صاحب سے رجوع کریں"
-              : "Guarded — this request tried to alter the assistant's scope."}
+          <div className="mt-2 rounded-lg border border-amber-400/20 bg-amber-400/5 px-2.5 py-2">
+            {answer.kind === "fatwa" ? (
+              <a
+                href={`mailto:?subject=${encodeURIComponent(
+                  "Seerah Q&A — Scholar consultation",
+                )}&body=${encodeURIComponent(
+                  `${redirectInfo().labelEn} — ${redirectInfo().labelUr}`,
+                )}`}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400/15 px-3 py-1.5 text-[11px] font-medium text-amber-200 transition hover:bg-amber-400/25"
+              >
+                {redirectInfo().labelEn} · {redirectInfo().labelUr}
+              </a>
+            ) : (
+              <div className="text-[11px] text-amber-200/90">
+                Guarded — this request tried to alter the assistant&apos;s scope.
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -195,7 +226,9 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
                   key={s.question}
                   onClick={() => void ask(s.question)}
                   className={cn(
-                    "rounded-full border border-white/10 bg-card px-3 py-1.5 text-xs text-muted transition hover:border-emerald-500/40 hover:text-emerald-200",
+                    "rounded-full border border-emerald-500/15 bg-emerald-500/[0.05] px-3.5 py-1.5 text-xs text-muted",
+                    "transition-all duration-200 hover:border-emerald-500/60 hover:bg-emerald-500/15 hover:text-emerald-100",
+                    "hover:shadow-[0_0_20px_-6px_rgba(16,185,129,0.55)] active:scale-95",
                     s.lang === "ur" && "font-ur rtl",
                   )}
                 >
@@ -209,7 +242,7 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
         {messages.map((m, i) =>
           m.role === "user" ? (
             <div key={i} className="flex justify-end">
-              <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-emerald-600/90 px-4 py-2.5 text-sm text-white">
+              <div className="max-w-[85%] rounded-2xl rounded-br-sm border border-emerald-400/20 bg-emerald-600/75 px-5 py-3 text-sm leading-7 text-white backdrop-blur-md">
                 {m.text}
               </div>
             </div>
@@ -237,13 +270,13 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about the Prophet ﷺ's life, character, and habits…"
-            className="flex-1 rounded-xl border border-white/10 bg-card px-4 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted/60 focus:border-emerald-500/50"
+            className="input-glow flex-1 rounded-xl border border-emerald-500/20 bg-card px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-muted/60 focus:border-emerald-500/50"
             disabled={busy}
           />
           <button
             type="submit"
             disabled={busy || !input.trim()}
-            className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 hover:shadow-[0_0_18px_-6px_rgba(16,185,129,0.7)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             Ask
           </button>

@@ -1,24 +1,39 @@
-import { search, getEngine } from "../search/search";
+import { search, getEngine, ensureLiveCorpus, searchSemantic } from "../search/search";
+import { rewriteSearchQuery } from "../search/rewrite";
 import { queryTokens, tokenize, ALIAS_GROUP_NAMES } from "../search/tokenize";
 import { detectQueryLang, answerLang, type QueryLang } from "../l10n/detect";
 import { checkBlockers, refusalText, type BlockKind } from "../guardrails/blockers";
-import { generateDeterministicAnswer } from "./generate";
-import { getLLMClient, type LLMChatMessage } from "../llm";
+import { generateDeterministicAnswer, type AnswerTarget } from "./generate";
 import type { Citation, IndexedDoc } from "../corpus/schema";
 
 /**
  * End-to-end question answering pipeline:
  *
- *   1. normalize + detect language
- *   2. deterministic blockers (fatwa / injection / empty)   <- fail closed
- *   3. lexical retrieval (BM25, multi-lingual conflation)
- *   4. out-of-corpus threshold (fail open politely, never fabricate)
- *   5. deterministic grounded generation (default = offline)
- *      -> optional LLM presentation pass, guarded by post-verification
- *   6. citation post-verification (every cited id must be in the chosen set)
+ *   1. warm the corpus from the live /api/seerathon/corpus API (snapshot fallback)
+ *   2. normalize + detect language
+ *   3. deterministic blockers (fatwa / injection / empty)   <- fail closed
+ *   4. retrieval on the ORIGINAL question (BM25 + semantic embeddings,
+ *      multi-lingual conflation)
+ *   5. out-of-corpus threshold (fail open politely, never fabricate)
+ *   6. if not grounded, retry retrieval with an LLM-normalized English query
+ *      (Roman Urdu / slang / indirect English) — search-only, never output
+ *   7. deterministic grounded generation (zero-hallucination)
  */
 
 export type AnswerStatus = "answered" | "blocked" | "out_of_corpus";
+
+/**
+ * Which retrieval path produced the answer:
+ *  - "deterministic": BM25 keyword retrieval only (semantic layer unavailable or
+ *    did not contribute to the winning candidate).
+ *  - "hybrid": the embedding/semantic layer contributed — the winning candidate
+ *    carried a real cosine score (semScore > 0), i.e. the hybrid engine ran.
+ *
+ * Generation is always the same deterministic, zero-hallucination generator;
+ * this flag only reports the retrieval engine, so the UI can surface when the
+ * semantic pipeline actually executed.
+ */
+export type AnswerEngine = "deterministic" | "hybrid";
 
 export interface Answer {
   status: AnswerStatus;
@@ -27,10 +42,27 @@ export interface Answer {
   lang: QueryLang;
   /** Ordered citations; the answer text references them as [1], [2], ... */
   citations: Citation[];
-  engine: "deterministic" | "llm";
+  engine: AnswerEngine;
+  /**
+   * When the LLM query rewriter was used to ground the answer (pass 2), the
+   * search string it produced. Surfaced so the UI can log/show the rewrite.
+   */
+  rewrittenQuery?: string;
+  /** Diagnostics for the semantic/hybrid retrieval layer. */
+  semantic?: {
+    /** Whether the embedding search returned any hits for this query. */
+    available: boolean;
+    /** Whether the winning candidate was ranked/grounded via embeddings. */
+    used: boolean;
+  };
   disclaimer: { en: string; ur: string };
   corpusVersion: string;
-  matched?: { topScore: number; coverage: number; topDocId?: string };
+  matched?: {
+    topScore: number;
+    coverage: number;
+    topDocId?: string;
+    semScore?: number;
+  };
 }
 
 /** Tunable thresholds for the out-of-corpus decision (calibrated in Phase 6). */
@@ -40,36 +72,49 @@ export const OUT_OF_CORPUS = {
   /** Minimum fraction of content query tokens matched by the top hit. */
   minCoverage: 0.5,
   /**
-   * Weak "name-only" guard: a query whose best hit scores below this AND has
-   * no topical anchor (no conflation-group token, no token present in >=3
-   * docs' bodies, no shared title token) is treated as an incidental mention
-   * (e.g. "Khalid Bin Waleed" matching inside the Conquest-of-Mecca narrative)
-   * and refused as out-of-corpus instead of answering with mismatched context.
+   * When the best hit shares NO query token with its title (event/location
+   * queries often match inside the body only), the BM25 score must clear this
+   * higher bar to prove the match is topical rather than an incidental mention
+   * of a name inside an unrelated narrative (e.g. "Khalid Bin Waleed" matching
+   * inside the Conquest-of-Mecca entry). Incidental mentions score low; core
+   * topics clear it. Calibrated against the live corpus (with include_hikayat):
+   * Khalid mention 13.0 (must reject) vs Hira 19.8 / Hijrah 29.7 / Badr 37.0.
    */
-  weakNameOnlyScore: 12,
-  /** A token appearing in this many docs' bodies counts as an established topic. */
-  bodyDfTopical: 3,
+  titlelessMinScore: 16,
+  /**
+   * A titleless hit may still be accepted when its semantic similarity to the
+   * query is high enough AND the query shares a recognized topical group with
+   * the document body (the relaxed title anchor). The topical-group condition
+   * is what excludes pure proper-name queries ("Khalid Bin Waleed") whose
+   * tokens map to no group. Calibrated on gemini-embedding-001: genuine body
+   * topics (armor -> Battle of Uhud 0.76, clothing 0.78) clear it; incidental
+   * matches do not.
+   */
+  semTitlelessMin: 0.62,
+  /**
+   * Semantic similarity (cosine) required before an embedding match may boost
+   * a candidate's rank. 0.45 is well above the gemini-embedding cosine range
+   * for unrelated texts (~0.3-0.4) while below clear topical matches (~0.55+).
+   */
+  semBoostThreshold: 0.45,
+  /**
+   * Cosine strength for the semantic boost per unit (scaled so a strong match
+   * can overtake a BM25 gap of up to ~30 points on the same grounding tier).
+   */
+  semBoostScale: 120,
 };
 
-/** Cached per-token document frequency over the body field (154 docs). */
-let bodyDfCache: ReadonlyMap<string, number> | null = null;
-function bodyDocFrequency(): ReadonlyMap<string, number> {
-  if (!bodyDfCache) {
-    const df = new Map<string, number>();
-    for (const doc of getEngine().corpus.docs) {
-      for (const t of new Set(tokenize(doc.fields.body))) {
-        df.set(t, (df.get(t) ?? 0) + 1);
-      }
-    }
-    bodyDfCache = df;
-  }
-  return bodyDfCache;
-}
-
-/** Does the query carry any "topical anchor" tying it to the corpus scope? */
-function hasTopicalAnchor(token: string): boolean {
-  if (ALIAS_GROUP_NAMES.has(token)) return true;
-  return (bodyDocFrequency().get(token) ?? 0) >= OUT_OF_CORPUS.bodyDfTopical;
+/**
+ * Candidate document surfaced by the hybrid retrieval. `bm25Score` is 0 for
+ * docs that only the semantic layer found; `semScore` is 0 for BM25-only docs.
+ */
+interface Candidate {
+  doc: IndexedDoc;
+  bm25Score: number;
+  semScore: number;
+  coverage: number;
+  titleOverlap: number;
+  hybridScore: number;
 }
 
 /** Number of significant query tokens also present in the doc title (en|ur). */
@@ -124,95 +169,10 @@ function getDisclaimer() {
   return { ...DISCLAIMER };
 }
 
-/**
- * Verify a candidate answer's citation claims against the allowed source ids.
- * Accepts two citation forms the pipeline uses:
- *   - the full 24-hex corpus id, e.g. 672b449ad458540020750f9f
- *   - the numbered form "[n]", which maps to allowedIds[n - 1] (the order the
- *     sources were passed to the answerer, matching the UI citation chips).
- * Empty result -> the answer cannot be trusted -> fallback.
- */
-export function verifyCitations(raw: string, allowedIds: string[]): string[] {
-  if (!raw) return [];
-  const allowed = new Set(allowedIds);
-  const found: string[] = [];
-  const pushId = (id: string) => {
-    if (allowed.has(id) && !found.includes(id)) found.push(id);
-  };
-  for (const m of raw.match(/[a-f0-9]{24}/gi) ?? []) {
-    pushId(m);
-  }
-  for (const n of raw.match(/\[(\d{1,2})\]/g) ?? []) {
-    const idx = Number.parseInt(n.slice(1, -1), 10) - 1;
-    const id = allowedIds[idx];
-    if (id) pushId(id);
-  }
-  return found;
-}
-
-function buildLLMPrompt(
-  sources: Array<{ doc: { id: string; titleEn: string; titleUr: string; textEn: string; textUr: string } }>,
-  question: string,
-  lang: "en" | "ur",
-): LLMChatMessage[] {
-  const ur = lang === "ur";
-  const blocks = sources
-    .map((s, i) => {
-      const title = ur ? s.doc.titleUr || s.doc.titleEn : s.doc.titleEn;
-      const text = ur ? s.doc.textUr : s.doc.textEn;
-      return `[${i + 1}] ${title}\n${text.slice(0, 1800)}`;
-    })
-    .join("\n\n---\n\n");
-  const system =
-    "You answer ONLY from the supplied corpus entries. Cite every claim with the entry number in square brackets, e.g. [1]. " +
-    "Your answer MUST contain at least one citation marker in [n] format, otherwise it will be rejected. " +
-    "Never invent hadith, Quran, or Seerah text. Answer concisely in clear, professional English. " +
-    "Answer in Urdu script only if the user explicitly asks for Urdu. " +
-    "Answer the user's question directly; when an entry is clearly relevant, use it and cite it. " +
-    "Only say you cannot answer from the corpus if the supplied text genuinely does not cover the question.";
-  const user = ur
-    ? `سوال: ${question}\n\nذخیرہ:\n${blocks}\n\nجواب براہِ راست دیں، اسی اندراج سے ماخوذ ہو اور نمبروں کے ساتھ حوالہ دیں ([1] وغیرہ)۔`
-    : `Question: ${question}\n\nCorpus:\n${blocks}\n\nAnswer directly from these entries, cite with [n], and do not hedge when an entry is relevant.`;
-  return [
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ];
-}
-
-/**
- * Attempt an optional LLM presentation pass. Fails closed: any missing
- * configuration, network error, or unverifiable citation falls back to the
- * deterministic answer.
- */
-async function maybeLLMPass(
-  question: string,
-  lang: "en" | "ur",
-  sources: Array<{ doc: IndexedDoc }>,
-): Promise<string | null> {
-  const client = getLLMClient();
-  if (!client.available) {
-    console.error("[llm] LLM not available — LLM_BASE_URL/LLM_API_KEY/LLM_MODEL or GEMINI_API_KEY not configured");
-    return null;
-  }
-  try {
-    const raw = await client.complete(buildLLMPrompt(sources, question, lang));
-    if (!raw) {
-      console.error(`[llm] ${client.provider} returned no content (all models in chain failed/404)`);
-      return null;
-    }
-    const ids = verifyCitations(raw, sources.map((s) => s.doc.id));
-    if (ids.length === 0) {
-      console.error(`[llm] ${client.provider} output contained no verifiable citation — rejecting, falling back to deterministic`);
-      return null;
-    }
-    return raw;
-  } catch (err) {
-    console.error(`[llm] ${client.provider} failed:`, err instanceof Error ? err.message : err);
-    return null;
-  }
-}
-
 export async function answerQuestion(rawQuestion: string): Promise<Answer> {
+  // Use the live spec corpus API when reachable; otherwise the frozen snapshot.
+  await ensureLiveCorpus();
+
   const question = normalizeQuestion(rawQuestion);
   const lang = detectQueryLang(question);
   const target = answerLang(lang, question);
@@ -220,70 +180,210 @@ export async function answerQuestion(rawQuestion: string): Promise<Answer> {
   const block = checkBlockers(question);
   if (block.blocked) return blockedAnswer(block.kind ?? "empty", lang);
 
-  const result = search(question, { topK: 6 });
-  const significant = queryTokens(question);
+  const originalSignificant = queryTokens(question);
+
+  // Pass 1: retrieval on the ORIGINAL question — deterministic and identical
+  // to the pre-rewrite pipeline. This is the primary path and never depends on
+  // an LLM.
+  const direct = await answerFromQuery(
+    question,
+    originalSignificant,
+    new Map(search(question, { topK: 12 }).hits.map((h) => [h.doc.id, h.score])),
+    lang,
+    target,
+  );
+  if (direct.status === "answered") return direct;
+
+  // Pass 2 (LLM query normalization) is a RETRIEVAL fallback for queries the
+  // original couldn't ground — Roman Urdu slang or indirect English like
+  // "metal gear" -> armor. It is only allowed when the user's OWN words carry
+  // at least one recognized topical group; otherwise a name-only query
+  // ("Khalid Bin Waleed") could have a topic invented for it by the rewrite.
+  // The rewrite feeds BM25 + embeddings only; language detection, answer
+  // generation, and mirroring still use the original question.
+  const eligible = originalSignificant.some((t) => ALIAS_GROUP_NAMES.has(t));
+  if (!eligible) return direct;
+
+  const rewritten = await rewriteSearchQuery(question);
+  if (rewritten === question) return direct;
+  const fallbackSignificant = queryTokens(rewritten).filter(
+    (t) => !GENERIC_REWRITE_TOKENS.has(t),
+  );
+  const fallback = await answerFromQuery(
+    rewritten,
+    fallbackSignificant,
+    new Map(search(rewritten, { topK: 12 }).hits.map((h) => [h.doc.id, h.score])),
+    lang,
+    target,
+    rewritten,
+  );
+  return fallback.status === "answered" ? fallback : direct;
+}
+
+/** Filler words the LLM rewrite tends to prepend; they carry no topical signal. */
+const GENERIC_REWRITE_TOKENS = new Set([
+  "prophet",
+  "muhammad",
+  "physical",
+  "general",
+  "description",
+  "characteristics",
+  "history",
+  "beloved",
+  "blessed",
+  "dear",
+  "noble",
+]);
+
+async function answerFromQuery(
+  retrievalQuery: string,
+  significant: string[],
+  lexicalBm25ById: Map<string, number>,
+  lang: QueryLang,
+  target: AnswerTarget,
+  rewrittenQuery?: string,
+): Promise<Answer> {
+  const result = search(retrievalQuery, { topK: 12 });
+  const semanticHits = await searchSemantic(retrievalQuery, 8);
 
   if (significant.length === 0 || result.hits.length === 0) {
     return noSupportAnswer(lang, 0);
   }
+  const semScoreById = new Map(semanticHits.map((s) => [s.doc.id, s.score]));
+  const seen = new Set<string>();
+  const pool: Candidate[] = [];
+  // The "prophet" group appears in essentially every document, so counting it
+  // towards coverage would let a doc "cover" a query it only matches via the
+  // universal reference. Exclude it (from both the numerator and the
+  // denominator) so coverage measures only the discriminating tokens.
+  const coverageTokens = significant.filter((t) => t !== "prophet");
 
-  // Pick the hit that explains the most significant query tokens (coverage
-  // first, score second). The top scorer may match only a single shared word
-  // (e.g. "battle"), while the best-coverage doc is the true topical match.
-  const candidates = result.hits
-    .filter((h) => h.substantive && h.score >= OUT_OF_CORPUS.minAbsScore)
-    .map((h) => ({
-      hit: h,
-      coverage:
-        significant.filter((t) => h.matchedGroups.includes(t)).length / significant.length,
-    }))
+  for (const h of result.hits) {
+    const docGroups = getEngine().index.docGroupsOf(h.doc.id);
+    const coverage =
+      coverageTokens.length === 0
+        ? 0
+        : coverageTokens.filter((t) => docGroups.has(t)).length /
+          coverageTokens.length;
+    const titleOverlap = titleTokenOverlap(h.doc, significant);
+    const semScore = semScoreById.get(h.doc.id) ?? 0;
+    const boost =
+      semScore >= OUT_OF_CORPUS.semBoostThreshold
+        ? (semScore - OUT_OF_CORPUS.semBoostThreshold) * OUT_OF_CORPUS.semBoostScale
+        : 0;
+    pool.push({
+      doc: h.doc,
+      bm25Score: h.score,
+      semScore,
+      coverage,
+      titleOverlap,
+      // The semantic boost re-ranks any candidate whose body is a strong enough
+      // embedding match — a title anchor is no longer required. The relaxed
+      // titleless guard below still stops incidental name mentions.
+      hybridScore: h.score + boost,
+    });
+    seen.add(h.doc.id);
+  }
+
+  for (const s of semanticHits) {
+    if (seen.has(s.doc.id)) continue;
+    const docGroups = getEngine().index.docGroupsOf(s.doc.id);
+    const coverage =
+      coverageTokens.length === 0
+        ? 0
+        : coverageTokens.filter((t) => docGroups.has(t)).length /
+          coverageTokens.length;
+    const titleOverlap = titleTokenOverlap(s.doc, significant);
+    const boost =
+      s.score >= OUT_OF_CORPUS.semBoostThreshold
+        ? (s.score - OUT_OF_CORPUS.semBoostThreshold) * OUT_OF_CORPUS.semBoostScale
+        : 0;
+    pool.push({
+      doc: s.doc,
+      bm25Score: 0,
+      semScore: s.score,
+      coverage,
+      titleOverlap,
+      hybridScore: s.score >= OUT_OF_CORPUS.semBoostThreshold ? boost : 0,
+    });
+    seen.add(s.doc.id);
+  }
+
+  // Grounding gate 1: a candidate must be substantive AND clear the absolute
+  // minimum score via BM25 or a strong semantic match.
+  const grounded = pool.filter(
+    (c) =>
+      c.coverage > 0 &&
+      (c.bm25Score >= OUT_OF_CORPUS.minAbsScore || c.semScore >= 0.5),
+  );
+
+  // Rank: hybrid score first (BM25 + semantic boost reflects how strongly the
+  // rewritten query matches the doc — the best discriminator when several
+  // docs cover the same topical group), then coverage, then title overlap.
+  const candidates = grounded
+    .map((c) => ({ ...c, matchedGroups: significant.filter((t) => getEngine().index.docGroupsOf(c.doc.id).has(t)) }))
     .sort(
-      (a, b) => b.coverage - a.coverage || b.hit.score - a.hit.score,
+      (a, b) =>
+        b.hybridScore - a.hybridScore ||
+        b.coverage - a.coverage ||
+        b.titleOverlap - a.titleOverlap,
     );
 
-  const best = candidates[0]?.hit;
-  if (!best || candidates[0].coverage < OUT_OF_CORPUS.minCoverage) {
-    return noSupportAnswer(lang, best?.score ?? 0);
+  const best = candidates[0];
+  if (!best) {
+    return noSupportAnswer(lang, 0);
   }
-  const coverage = candidates[0].coverage;
+  const coverage = best.coverage;
 
-  // Weak name-only guard: refuse when the query is just a name that happens to
-  // appear inside a narrative (no topical anchor, no title support, low score).
-  // e.g. "Khalid Bin Waleed" -> matched only because that name appears in the
-  // Conquest of Mecca entry. Fails closed to the out-of-corpus redirect.
-  if (
-    best.score < OUT_OF_CORPUS.weakNameOnlyScore &&
-    !significant.some(hasTopicalAnchor) &&
-    titleTokenOverlap(best.doc, significant) === 0
-  ) {
-    return noSupportAnswer(lang, best.score);
+  // Unified grounding proof — accepts the best candidate iff it satisfies
+  // EITHER a lexical proof OR a semantic proof:
+  //
+  //  (A) Lexical proof: the doc covers >= half the grounding tokens AND its
+  //      BM25 score (against the same query the tokens came from) clears the
+  //      bar. Title-anchored matches need the absolute minimum; titleless
+  //      matches must clear the higher incidental-mention bar ("Khalid Bin
+  //      Waleed" -> Conquest of Mecca scores ~13, far below a real topical
+  //      match).
+  //
+  //  (B) Semantic proof (the relaxed title anchor): a strong embedding body
+  //      match that is anchored in a RECOGNIZED TOPICAL GROUP the query shares
+  //      with the doc. Requiring a topical-group anchor is what keeps a pure
+  //      proper-name query ("Khalid Bin Waleed") — whose tokens map to no group
+  //      — from ever passing through the semantic door.
+  const docGroups = getEngine().index.docGroupsOf(best.doc.id);
+  const topicalMatch = significant.some(
+    (t) => ALIAS_GROUP_NAMES.has(t) && docGroups.has(t),
+  );
+  const lexicalBm25 = lexicalBm25ById.get(best.doc.id) ?? 0;
+  const lexicalOk =
+    best.coverage >= OUT_OF_CORPUS.minCoverage &&
+    lexicalBm25 >=
+      (best.titleOverlap > 0
+        ? OUT_OF_CORPUS.minAbsScore
+        : OUT_OF_CORPUS.titlelessMinScore);
+  const semanticOk =
+    topicalMatch && best.semScore >= OUT_OF_CORPUS.semTitlelessMin;
+
+  if (!lexicalOk && !semanticOk) {
+    return noSupportAnswer(lang, best.bm25Score);
   }
 
   // confirmed support set: best doc + close runner-ups
-  const confirmed = [best, ...result.hits.slice(1)]
-    .filter((h) => h.substantive && h.score >= best.score * 0.4)
+  const confirmed = candidates
+    .filter((c) => c.hybridScore >= best.hybridScore * 0.4)
     .slice(0, 3);
 
-  const sourcesForText = confirmed.map((h) => ({ doc: h.doc }));
+  const sourcesForText = confirmed.map((c) => ({ doc: c.doc }));
 
-  // Primary answer: real LLM (RAG → Gemini) when configured. Every citation is
-  // post-verified against the retrieved ids; unverifiable/failed LLM output
-  // falls back to the deterministic grounded answer (spec-mandated safe
-  // fallback), never to invented content.
-  let text = "";
-  let engine: Answer["engine"] = "deterministic";
-  if (getLLMClient().available) {
-    const llmText = await maybeLLMPass(question, target, confirmed);
-    if (llmText) {
-      text = llmText;
-      engine = "llm";
-    }
-  }
-  if (!text) {
-    text = generateDeterministicAnswer(sourcesForText, target);
-  }
+  // Deterministic grounded generation: the only answer path (zero-hallucination,
+  // spec-mandated safe fallback). No external LLM is used.
+  const text = generateDeterministicAnswer(sourcesForText, target);
+  // Report the retrieval engine honestly: if the winning candidate carried a
+  // real cosine score the hybrid/semantic pipeline executed, otherwise the
+  // answer was grounded by BM25 alone.
+  const engine: Answer["engine"] = best.semScore > 0 ? "hybrid" : "deterministic";
 
-  const citations = confirmed.map((h) => h.doc.citation);
+  const citations = confirmed.map((c) => c.doc.citation);
 
   return {
     status: "answered",
@@ -291,8 +391,18 @@ export async function answerQuestion(rawQuestion: string): Promise<Answer> {
     lang,
     citations,
     engine,
+    ...(rewrittenQuery ? { rewrittenQuery } : {}),
+    semantic: {
+      available: semanticHits.length > 0,
+      used: best.semScore > 0,
+    },
     disclaimer: getDisclaimer(),
     corpusVersion: getEngine().corpus.corpusVersion,
-    matched: { topScore: best.score, coverage, topDocId: best.doc.id },
+    matched: {
+      topScore: best.bm25Score,
+      coverage,
+      topDocId: best.doc.id,
+      semScore: best.semScore,
+    },
   };
 }

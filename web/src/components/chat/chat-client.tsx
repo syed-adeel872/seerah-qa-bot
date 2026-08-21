@@ -201,34 +201,6 @@ function AssistantBubble({ m }: { m: Message }) {
           <>
             <SourceChips citations={answer.citations} />
             <SourceList citations={answer.citations} />
-            <div className="mt-2 flex items-center gap-2 text-[10px] text-muted/80">
-              <span>engine: {answer.engine}</span>
-              {answer.semantic && (
-                <>
-                  <span>·</span>
-                  <span>
-                    semantic: {answer.semantic.available ? "ok" : "unavailable"}
-                    {answer.semantic.used ? " (used)" : ""}
-                  </span>
-                </>
-              )}
-              {answer.rewrittenQuery && (
-                <>
-                  <span>·</span>
-                  <span className="max-w-[220px] truncate" title={answer.rewrittenQuery}>
-                    rewrite: “{answer.rewrittenQuery}”
-                  </span>
-                </>
-              )}
-              <span>·</span>
-              <span>corpus v{answer.corpusVersion}</span>
-              {answer.matched && (
-                <>
-                  <span>·</span>
-                  <span>match {Math.round((answer.matched.coverage ?? 0) * 100)}%</span>
-                </>
-              )}
-            </div>
           </>
         )}
 
@@ -307,7 +279,8 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
 return (
     <div className="h-screen w-full flex flex-col" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75%)' }}>
       {/* messages */}
-      <div ref={listRef} className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto px-4 pb-4 flex flex-col">
+      <div className="flex-1 overflow-y-auto w-full">
+        <div ref={listRef} className="max-w-4xl mx-auto px-4 pb-4 flex flex-col">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center flex-1 w-full text-center mt-12">
             <div className="max-w-md">
@@ -353,6 +326,7 @@ return (
           </div>
         )}
         <div ref={endRef} />
+      </div>
       </div>
 
       {/* composer */}

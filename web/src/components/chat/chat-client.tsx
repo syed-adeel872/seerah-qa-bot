@@ -305,7 +305,7 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
   }
 
 return (
-    <div className="min-h-screen w-full flex flex-col" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75)' }}>
+    <div className="min-h-screen w-full flex flex-col" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75%)' }}>
       {/* messages */}
       <div ref={listRef} className="max-w-4xl mx-auto w-full px-4 flex-1 flex flex-col">
         {messages.length === 0 && (

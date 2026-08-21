@@ -65,6 +65,7 @@ function CopyButton({ text, tone = "assistant" }: { text: string; tone?: "user" 
       title={copied ? "Copied" : "Copy"}
       className={cn(
         "inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-medium leading-none transition-colors",
+        "cursor-pointer",
         tone === "user"
           ? copied
             ? "bg-emerald-400/20 text-emerald-100"

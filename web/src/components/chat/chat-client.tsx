@@ -281,7 +281,7 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
   }
 
 return (
-    <div className="h-screen w-full flex flex-col" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75%)' }}>
+    <div className="h-screen w-full flex flex-col bg-gray-950 text-gray-100" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75%)' }}>
       {/* messages */}
       <div className="flex-1 overflow-y-auto w-full">
         <div ref={listRef} className="flex flex-col gap-6 pb-6 pt-24 max-w-4xl mx-auto w-full">
@@ -338,7 +338,7 @@ return (
       </div>
 
       {/* composer */}
-      <form onSubmit={onSubmit} className="border-t border-white/8 px-4 py-3 backdrop-blur sm:px-6 bg-transparent shrink-0">
+      <form onSubmit={onSubmit} className="shrink-0 w-full pb-4 pt-2 px-4 bg-gray-950/80 backdrop-blur-md border-t border-gray-800/50">
         <div className="mx-auto flex max-w-3xl items-center gap-2">
           <input
             value={input}

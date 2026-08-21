@@ -118,9 +118,9 @@ function SourceChips({ citations }: { citations: Citation[] }) {
           key={c.id}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs leading-none",
-            "border-emerald-500/25 bg-emerald-500/10 text-emerald-200",
+            "border-emerald-500/20 bg-emerald-950/20 text-emerald-300",
           )}
-          title={`source: ${c.source} · id: ${c.id}${c.section ? ` · ${c.section}` : ""}`}
+          title={`source: ${c.source}${c.section ? ` · ${c.section}` : ""}`}
         >
           <span className="font-mono text-emerald-400/80">[{i + 1}]</span>
           <span className="max-w-[220px] truncate">
@@ -138,13 +138,13 @@ function SourceList({ citations }: { citations: Citation[] }) {
       {citations.map((c, i) => (
         <div
           key={c.id}
-          className="rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs"
+          className="rounded-lg border border-emerald-500/15 bg-emerald-950/20 px-3 py-2 text-xs"
         >
           <div className="flex items-start justify-between gap-3">
             <span className="font-medium text-emerald-200">
               [{i + 1}] {c.title.en}
             </span>
-            <span className="shrink-0 rounded bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-emerald-400/80">
+            <span className="shrink-0 rounded bg-emerald-950/10 px-1.5 py-0.5 font-mono text-[10px] text-emerald-400/80">
               {c.source === "shamail" ? c.category?.id ? `shamail · cat ${c.category.id}` : "shamail" : `timeline · ${c.section ?? "-"}`}
             </span>
           </div>
@@ -318,24 +318,23 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
               <p className="mt-1 text-sm text-muted">{PREAMBLE}</p>
               <p className="mt-4 text-[11px] text-muted/70">{corpusSummary}</p>
             </div>
-            <div className="flex max-w-2xl flex-wrap justify-center gap-2">
-              {SAMPLE_QUESTIONS.map((s) => (
-                <button
-                  key={s.question}
-                  onClick={() => void ask(s.question)}
-                  style={{ cursor: 'pointer' }}
-                  className={cn(
-                    "rounded-full border border-emerald-500/15 bg-emerald-500/[0.05] px-3.5 py-1.5 text-xs text-muted",
-                    "transition-all duration-200 hover:border-emerald-500/60 hover:bg-emerald-500/15 hover:text-emerald-100",
-                    "hover:shadow-[0_0_20px_-6px_rgba(16,185,129,0.55)] active:scale-95",
-                    "cursor-pointer",
-                    s.lang === "ur" && "font-ur rtl",
-                  )}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
+<div className="flex max-w-2xl flex-wrap gap-2">
+               {SAMPLE_QUESTIONS.map((s) => (
+                 <button
+                   key={s.question}
+                   onClick={() => void ask(s.question)}
+                   className={cn(
+                     "rounded-full border border-emerald-500/20 bg-emerald-950/20 px-3.5 py-1.5 text-xs text-muted",
+                     "transition-all duration-200 hover:border-emerald-500/40 hover:bg-emerald-950/30 hover:text-emerald-100",
+                     "hover:shadow-[0_0_12px_-4px_rgba(16,185,129,0.3)]",
+                     "cursor-pointer",
+                     s.lang === "ur" && "font-ur rtl",
+                   )}
+                 >
+                   {s.label}
+                 </button>
+               ))}
+             </div>
           </div>
         )}
 

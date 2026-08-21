@@ -138,7 +138,8 @@ function SourceList({ citations }: { citations: Citation[] }) {
       {citations.map((c, i) => (
         <div
           key={c.id}
-          className="rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-4 backdrop-blur-sm"
+          style={{ background: 'rgba(6, 78, 59, 0.2)', border: '1px solid rgba(16, 185, 129, 0.25)' }}
+          className="max-w-3xl mx-auto my-3 rounded-xl p-4 shadow-lg backdrop-blur-md"
         >
           <div className="flex items-start justify-between gap-3">
             <span className="font-medium text-emerald-200">
@@ -304,7 +305,7 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-950/30 via-gray-950 to-black">
+    <div className="flex flex-1 flex-col overflow-hidden max-w-3xl mx-auto px-4 w-full" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75%)' }}>
       {/* messages */}
       <div ref={listRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-6 sm:px-6">
         {messages.length === 0 && (

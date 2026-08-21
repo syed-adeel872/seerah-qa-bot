@@ -322,10 +322,12 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
                 <button
                   key={s.question}
                   onClick={() => void ask(s.question)}
+                  style={{ cursor: 'pointer' }}
                   className={cn(
                     "rounded-full border border-emerald-500/15 bg-emerald-500/[0.05] px-3.5 py-1.5 text-xs text-muted",
                     "transition-all duration-200 hover:border-emerald-500/60 hover:bg-emerald-500/15 hover:text-emerald-100",
                     "hover:shadow-[0_0_20px_-6px_rgba(16,185,129,0.55)] active:scale-95",
+                    "cursor-pointer",
                     s.lang === "ur" && "font-ur rtl",
                   )}
                 >
@@ -371,11 +373,12 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
             className="input-glow flex-1 rounded-xl border border-emerald-500/20 bg-card px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-muted/60 focus:border-emerald-500/50"
             disabled={busy}
           />
-          <button
-            type="submit"
-            disabled={busy || !input.trim()}
-            className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 hover:shadow-[0_0_18px_-6px_rgba(16,185,129,0.7)] disabled:cursor-not-allowed disabled:opacity-40"
-          >
+<button
+              type="submit"
+              disabled={busy || !input.trim()}
+              style={{ cursor: 'pointer' }}
+              className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 hover:shadow-[0_0_18px_-6px_rgba(16,185,129,0.7)] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+            >
             Ask
           </button>
         </div>

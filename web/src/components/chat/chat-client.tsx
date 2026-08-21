@@ -138,19 +138,17 @@ function SourceList({ citations }: { citations: Citation[] }) {
       {citations.map((c, i) => (
         <div
           key={c.id}
-          className="rounded-lg border border-emerald-500/15 bg-emerald-950/20 px-3 py-2 text-xs"
+          className="rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-4 backdrop-blur-sm"
         >
           <div className="flex items-start justify-between gap-3">
             <span className="font-medium text-emerald-200">
               [{i + 1}] {c.title.en}
             </span>
-            <span className="shrink-0 rounded bg-emerald-950/10 px-1.5 py-0.5 font-mono text-[10px] text-emerald-400/80">
-              {c.source === "shamail" ? c.category?.id ? `shamail · cat ${c.category.id}` : "shamail" : `timeline · ${c.section ?? "-"}`}
-            </span>
+            <div className="flex items-center gap-2">
+              {c.title.ur && <div className="font-ur rtl text-[13px]">{c.title.ur}</div>}
+            </div>
           </div>
           <div className="mt-1 text-muted">
-            {c.title.ur && <div className="font-ur rtl text-[13px]">{c.title.ur}</div>}
-            <div className="font-mono text-[10px] opacity-70">id: {c.id}</div>
             {c.hawala?.en && <div className="text-[11px] text-emerald-300/70">Hawala: {c.hawala.en}</div>}
           </div>
         </div>
@@ -306,7 +304,7 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-950/30 via-gray-950 to-black">
       {/* messages */}
       <div ref={listRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-6 sm:px-6">
         {messages.length === 0 && (

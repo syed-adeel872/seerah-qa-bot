@@ -376,9 +376,8 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
           />
 <button
               type="submit"
-              disabled={busy || !input.trim()}
-              style={{ cursor: 'pointer' }}
-              className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 hover:shadow-[0_0_18px_-6px_rgba(16,185,129,0.7)] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+              disabled={!input.trim() || busy}
+              className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 hover:shadow-[0_0_18px_-6px_rgba(16,185,129,0.7)] disabled:cursor-not-allowed cursor-pointer"
             >
             Ask
           </button>

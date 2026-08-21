@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { cn } from "@/lib/utils";
 import { SAMPLE_QUESTIONS } from "./samples";
 import { redirectInfo } from "@/lib/guardrails/blockers";
@@ -15,6 +15,99 @@ interface Message {
 }
 
 const PREAMBLE = "Ask anything about the Seerah and Shamail — answered only from the verified corpus.";
+
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // fall through to the legacy path
+    }
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-9999px";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+function CopyButton({ text, tone = "assistant" }: { text: string; tone?: "user" | "assistant" }) {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+  }, []);
+
+  async function handleCopy() {
+    if (!(await copyToClipboard(text))) return;
+    setCopied(true);
+    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void handleCopy()}
+      aria-label={copied ? "Copied to clipboard" : "Copy message"}
+      title={copied ? "Copied" : "Copy"}
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-medium leading-none transition-colors",
+        tone === "user"
+          ? copied
+            ? "bg-emerald-400/20 text-emerald-100"
+            : "text-white/55 hover:bg-white/10 hover:text-white"
+          : copied
+            ? "bg-emerald-500/10 text-emerald-300"
+            : "text-muted/50 hover:bg-white/5 hover:text-foreground",
+      )}
+    >
+      {copied ? (
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+      {copied ? "Copied!" : "Copy"}
+    </button>
+  );
+}
 
 function SourceChips({ citations }: { citations: Citation[] }) {
   return (
@@ -68,11 +161,12 @@ function SourceList({ citations }: { citations: Citation[] }) {
 function AssistantBubble({ m }: { m: Message }) {
   const answer = m.answer;
   if (!answer) {
+    const displayText = (m.error ? "Something went wrong. Please try again." : m.text) || "…";
     return (
       <div className="flex justify-start">
-        <div className="max-w-[85%] rounded-2xl border border-white/10 bg-card px-4 py-3 text-sm text-muted">
-          {(m.error ? "Something went wrong. Please try again." : m.text) ||
-            "…"}
+        <div className="flex max-w-[85%] items-start gap-2 rounded-2xl border border-white/10 bg-card px-4 py-3 text-sm text-muted">
+          <div className="flex-1 whitespace-pre-wrap">{displayText}</div>
+          <CopyButton text={displayText} />
         </div>
       </div>
     );
@@ -96,8 +190,11 @@ function AssistantBubble({ m }: { m: Message }) {
                 : "border-emerald-500/15 bg-emerald-500/[0.07] glow-card",
         )}
       >
-        <div className={cn("text-sm leading-7 whitespace-pre-wrap", isUrdu && "font-ur rtl text-[15px] leading-8")}>
-          {answer.text}
+        <div className="flex items-start gap-3">
+          <div className={cn("flex-1 text-sm leading-7 whitespace-pre-wrap", isUrdu && "font-ur rtl text-[15px] leading-8")}>
+            {answer.text}
+          </div>
+          <CopyButton text={answer.text} />
         </div>
 
         {answer.status === "answered" && answer.citations.length > 0 && (
@@ -242,8 +339,9 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
         {messages.map((m, i) =>
           m.role === "user" ? (
             <div key={i} className="flex justify-end">
-              <div className="max-w-[85%] rounded-2xl rounded-br-sm border border-emerald-400/20 bg-emerald-600/75 px-5 py-3 text-sm leading-7 text-white backdrop-blur-md">
-                {m.text}
+              <div className="flex max-w-[85%] items-start gap-2 rounded-2xl rounded-br-sm border border-emerald-400/20 bg-emerald-600/75 px-5 py-3 text-sm leading-7 text-white backdrop-blur-md">
+                <div className="flex-1 whitespace-pre-wrap">{m.text}</div>
+                <CopyButton text={m.text} tone="user" />
               </div>
             </div>
           ) : (

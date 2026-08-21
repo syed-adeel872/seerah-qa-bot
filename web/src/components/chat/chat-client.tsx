@@ -163,10 +163,12 @@ function AssistantBubble({ m }: { m: Message }) {
   if (!answer) {
     const displayText = (m.error ? "Something went wrong. Please try again." : m.text) || "…";
     return (
-      <div className="flex justify-start">
-        <div className="flex max-w-[85%] items-start gap-2 rounded-2xl border border-white/10 bg-card px-4 py-3 text-sm text-muted">
-          <div className="flex-1 whitespace-pre-wrap">{displayText}</div>
-          <CopyButton text={displayText} />
+      <div className="flex w-full justify-start">
+        <div className="max-w-[95%] px-2">
+          <div className="flex items-start gap-2 rounded-2xl border border-white/10 bg-card px-4 py-3 text-sm text-muted">
+            <div className="flex-1 whitespace-pre-wrap">{displayText}</div>
+            <CopyButton text={displayText} />
+          </div>
         </div>
       </div>
     );
@@ -177,19 +179,20 @@ function AssistantBubble({ m }: { m: Message }) {
   const isUrdu = answer.lang === "ur";
 
   return (
-    <div className="flex justify-start">
-      <div
-        className={cn(
-          "max-w-[85%] rounded-2xl border px-5 py-4 backdrop-blur-md",
-          isBlocked && answer.kind === "fatwa"
-            ? "border-amber-400/25 bg-warn-soft"
-            : isBlocked
-              ? "border-amber-400/20 bg-warn-soft"
-              : isOut
-                ? "border-white/10 bg-white/[0.03]"
-                : "border-emerald-500/15 bg-emerald-500/[0.07] glow-card",
-        )}
-      >
+    <div className="flex w-full justify-start">
+      <div className="max-w-[95%] px-2">
+        <div
+          className={cn(
+            "rounded-2xl border px-5 py-4 backdrop-blur-md",
+            isBlocked && answer.kind === "fatwa"
+              ? "border-amber-400/25 bg-warn-soft"
+              : isBlocked
+                ? "border-amber-400/20 bg-warn-soft"
+                : isOut
+                  ? "border-white/10 bg-white/[0.03]"
+                  : "border-emerald-500/15 bg-emerald-500/[0.07] glow-card",
+          )}
+        >
         <div className="flex items-start gap-3">
           <div className={cn("flex-1 text-sm leading-7 whitespace-pre-wrap", isUrdu && "font-ur rtl text-[15px] leading-8")}>
             {answer.text}
@@ -224,6 +227,7 @@ function AssistantBubble({ m }: { m: Message }) {
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
@@ -280,7 +284,7 @@ return (
     <div className="h-screen w-full flex flex-col" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75%)' }}>
       {/* messages */}
       <div className="flex-1 overflow-y-auto w-full">
-        <div ref={listRef} className="max-w-4xl mx-auto px-4 pb-4 flex flex-col">
+        <div ref={listRef} className="flex flex-col gap-6 pb-6 pt-24 max-w-4xl mx-auto w-full">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center flex-1 w-full text-center mt-12">
             <div className="max-w-md">
@@ -305,10 +309,12 @@ return (
 
         {messages.map((m, i) =>
           m.role === "user" ? (
-            <div key={i} className="flex justify-end">
-              <div className="flex max-w-[85%] items-start gap-2 rounded-2xl rounded-br-sm border border-emerald-400/20 bg-emerald-600/75 px-5 py-3 text-sm leading-7 text-white backdrop-blur-md">
-                <div className="flex-1 whitespace-pre-wrap">{m.text}</div>
-                <CopyButton text={m.text} tone="user" />
+            <div key={i} className="flex w-full justify-end">
+              <div className="max-w-[85%] bg-emerald-900/40 rounded-2xl px-5 py-3 text-right">
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 whitespace-pre-wrap text-sm leading-7">{m.text}</div>
+                  <CopyButton text={m.text} tone="user" />
+                </div>
               </div>
             </div>
           ) : (
@@ -317,11 +323,13 @@ return (
         )}
 
         {busy && (
-          <div className="flex justify-start">
-            <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-500/20 bg-card px-4 py-3">
-              <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
-              <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
-              <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
+          <div className="flex w-full justify-start">
+            <div className="max-w-[95%] px-2">
+              <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-500/20 bg-card px-4 py-3">
+                <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
+              </div>
             </div>
           </div>
         )}

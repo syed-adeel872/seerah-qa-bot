@@ -134,26 +134,26 @@ function SourceChips({ citations }: { citations: Citation[] }) {
 
 function SourceList({ citations }: { citations: Citation[] }) {
   return (
-    <div className="mt-3 space-y-2">
+    <div className="flex flex-col gap-4 mt-6">
       {citations.map((c, i) => (
         <div
           key={c.id}
           style={{ background: 'rgba(6, 78, 59, 0.2)', border: '1px solid rgba(16, 185, 129, 0.25)' }}
-          className="max-w-3xl mx-auto my-3 rounded-xl p-4 shadow-lg backdrop-blur-md"
+          className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-4 backdrop-blur-sm"
         >
           <div className="flex items-start justify-between gap-3">
-            <span className="font-medium text-emerald-200">
+            <span className="font-medium text-emerald-200" dir="ltr">
               [{i + 1}] {c.title.en}
             </span>
-            <div className="flex items-center gap-2">
-              {c.title.ur && <div className="font-ur rtl text-[13px]">{c.title.ur}</div>}
-            </div>
+            <span className="font-medium text-emerald-200" dir="rtl">
+              {c.title.ur}
+            </span>
           </div>
           <div className="mt-1 text-muted">
             {c.hawala?.en && <div className="text-[11px] text-emerald-300/70">Hawala: {c.hawala.en}</div>}
           </div>
         </div>
-      ))}
+      ))
     </div>
   );
 }
@@ -304,10 +304,10 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
     void ask(input);
   }
 
-  return (
-    <div className="flex flex-1 flex-col overflow-hidden min-h-screen w-full w-full" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75%)' }}>
+return (
+    <div className="min-h-screen w-full flex flex-col" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75)' }}>
       {/* messages */}
-      <div ref={listRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-6 sm:px-6">
+      <div ref={listRef} className="max-w-4xl mx-auto w-full px-4 flex-1 flex flex-col">
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
             <div className="max-w-md">
@@ -322,14 +322,7 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
                  <button
                    key={s.question}
                    onClick={() => void ask(s.question)}
-                   className={cn(
-                     "rounded-full border border-emerald-500/20 bg-emerald-950/20 px-3.5 py-1.5 text-xs text-muted",
-                     "transition-all duration-200 hover:border-emerald-500/40 hover:bg-emerald-950/30 hover:text-emerald-100",
-                     "hover:shadow-[0_0_12px_-4px_rgba(16,185,129,0.3)]",
-                     "cursor-pointer",
-                     s.lang === "ur" && "font-ur rtl",
-                   )}
-                 >
+                   className="rounded-full border border-emerald-500/30 bg-emerald-950/30 hover:bg-emerald-900/40 text-emerald-200 text-sm rounded-full px-4 py-2 transition-all cursor-pointer">
                    {s.label}
                  </button>
                ))}
@@ -363,7 +356,7 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
       </div>
 
       {/* composer */}
-      <form onSubmit={onSubmit} className="border-t border-white/8 bg-background/80 px-4 py-3 backdrop-blur sm:px-6">
+      <form onSubmit={onSubmit} className="border-t border-white/8 px-4 py-3 backdrop-blur sm:px-6 bg-transparent">
         <div className="mx-auto flex max-w-3xl items-center gap-2">
           <input
             value={input}

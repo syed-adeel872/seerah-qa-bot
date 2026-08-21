@@ -153,7 +153,7 @@ function SourceList({ citations }: { citations: Citation[] }) {
             {c.hawala?.en && <div className="text-[11px] text-emerald-300/70">Hawala: {c.hawala.en}</div>}
           </div>
         </div>
-      ))
+      ))}
     </div>
   );
 }

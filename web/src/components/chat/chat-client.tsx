@@ -164,11 +164,8 @@ function AssistantBubble({ m }: { m: Message }) {
     const displayText = (m.error ? "Something went wrong. Please try again." : m.text) || "…";
     return (
       <div className="flex w-full justify-start">
-        <div className="max-w-[95%] px-2">
-          <div className="flex items-start gap-2 rounded-2xl border border-white/10 bg-card px-4 py-3 text-sm text-muted">
-            <div className="flex-1 whitespace-pre-wrap">{displayText}</div>
-            <CopyButton text={displayText} />
-          </div>
+        <div className="max-w-[85%] text-left text-gray-200">
+          <div className="whitespace-pre-wrap">{displayText}</div>
         </div>
       </div>
     );
@@ -180,24 +177,9 @@ function AssistantBubble({ m }: { m: Message }) {
 
   return (
     <div className="flex w-full justify-start">
-      <div className="max-w-[95%] px-2">
-        <div
-          className={cn(
-            "rounded-2xl border px-5 py-4 backdrop-blur-md",
-            isBlocked && answer.kind === "fatwa"
-              ? "border-amber-400/25 bg-warn-soft"
-              : isBlocked
-                ? "border-amber-400/20 bg-warn-soft"
-                : isOut
-                  ? "border-white/10 bg-white/[0.03]"
-                  : "border-emerald-500/15 bg-emerald-500/[0.07] glow-card",
-          )}
-        >
-        <div className="flex items-start gap-3">
-          <div className={cn("flex-1 text-sm leading-7 whitespace-pre-wrap", isUrdu && "font-ur rtl text-[15px] leading-8")}>
-            {answer.text}
-          </div>
-          <CopyButton text={answer.text} />
+      <div className="max-w-[85%] text-left text-gray-200">
+        <div className={cn("whitespace-pre-wrap text-sm leading-7", isUrdu && "font-ur rtl text-[15px] leading-8")}>
+          {answer.text}
         </div>
 
         {answer.status === "answered" && answer.citations.length > 0 && (
@@ -227,7 +209,9 @@ function AssistantBubble({ m }: { m: Message }) {
             )}
           </div>
         )}
-      </div>
+        <div className="mt-1">
+          <CopyButton text={answer.text} />
+        </div>
       </div>
     </div>
   );
@@ -282,9 +266,31 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
 
 return (
     <div className="h-screen w-full flex flex-col bg-gray-950 text-gray-100" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75%)' }}>
+      {/* persistent header */}
+      <div className="w-full shrink-0 p-4 border-b border-gray-800/50 bg-gray-950/80 backdrop-blur-md z-10">
+        <div className="mx-auto flex max-w-4xl items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://www.seeratkidunya.com/images/landingPage/homePage/logo.svg"
+              alt="Seerat Ki Dunya"
+              className="h-9 w-auto"
+            />
+            <div>
+              <h1 className="text-base font-semibold tracking-tight">Seerah Q&A</h1>
+              <p className="text-[12px] text-muted">Grounded in the verified Seerah &amp; Shamail corpus</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] text-muted">Web</span>
+            <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10px] text-emerald-200">Grounded · Cited</span>
+          </div>
+        </div>
+      </div>
+
       {/* messages */}
       <div className="flex-1 overflow-y-auto w-full">
-        <div ref={listRef} className="flex flex-col gap-6 pb-6 pt-24 max-w-4xl mx-auto w-full">
+        <div ref={listRef} className="flex flex-col gap-6 pb-6 pt-4 max-w-4xl mx-auto w-full">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center flex-1 w-full text-center mt-12">
             <div className="max-w-md">
@@ -324,12 +330,10 @@ return (
 
         {busy && (
           <div className="flex w-full justify-start">
-            <div className="max-w-[95%] px-2">
-              <div className="flex items-center gap-1.5 rounded-2xl border border-emerald-500/20 bg-card px-4 py-3">
-                <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
-              </div>
+            <div className="flex items-center gap-1.5 px-2 py-3">
+              <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
             </div>
           </div>
         )}

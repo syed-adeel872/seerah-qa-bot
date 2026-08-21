@@ -6,6 +6,10 @@ import { urduToRoman } from "../l10n/translit";
  * Generates a grounded response exclusively from the retrieved corpus
  * documents — no invented hadith, no opinions. Used by default (offline)
  * and as the fallback whenever an LLM result fails post-verification.
+ *
+ * This generator synthesizes the retrieved context into natural,
+ * cohesive, flowing paragraphs. It does NOT output raw database fields,
+ * "Key points" headings, bracketed numbers, or raw bulleted lists.
  */
 
 export type AnswerTarget = "en" | "ur" | "roman-ur";
@@ -37,76 +41,74 @@ function romanTitle(doc: IndexedDoc): string {
 }
 
 /**
+ * Extract the most relevant excerpt from a document for natural integration.
+ * Strips raw formatting artifacts and returns a clean passage.
+ */
+function extractPassage(lang: AnswerTarget, doc: IndexedDoc): string {
+  const paras = paragraphs(lang, doc);
+  if (doc.source === "shamail") {
+    // For shamail, take the narration (first paragraph) as the primary passage
+    const narration = paras[0] ?? "";
+    const excerpt = trimExcerpt(narration, 500);
+
+    // Also gather lessons from tail paragraphs (without "Key points" heading)
+    const tail = paras.slice(-2);
+    const lessons: string[] = [];
+    for (const p of tail) {
+      const items = p
+        .split(/\n+|\*+|•+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 10);
+      lessons.push(...items);
+    }
+    const lesson = lessons[0] ? `. ${trimExcerpt(lessons[0], 200)}` : "";
+    return excerpt + lesson;
+  }
+  // For timeline, take the full text as a flowing passage
+  return trimExcerpt(paras.join(" "), 600);
+}
+
+/**
  * Build the reply text for the selected source documents using their corpus
- * text verbatim. Timeline entries yield a focused excerpt; shamail entries
- * yield the narration plus up to two of the entry's own key points.
+ * text verbatim. The response is woven into natural, conversational paragraphs
+ * — no raw headings, no bracketed numbers, no bulleted lists from the database.
  */
 export function generateDeterministicAnswer(
   sources: Array<{ doc: IndexedDoc }>,
   lang: AnswerTarget,
 ): string {
-  const parts: string[] = [];
-
-  const intro =
-    lang === "ur"
-      ? "ذخیرے (شمائل + سیرت ٹائم لائن) سے ماخوذ جواب"
-      : lang === "roman-ur"
-        ? "Seerah aur Shamail corpus se makhuz jawab"
-        : "Based on the Seerah & Shamail corpus";
-  parts.push(intro);
-  parts.push("");
-
-  sources.forEach(({ doc }, i) => {
-    const n = i + 1;
+  const passages = sources.map(({ doc }) => {
     const title =
       lang === "ur" ? doc.titleUr || doc.titleEn : lang === "roman-ur" ? romanTitle(doc) : doc.titleEn;
-    parts.push(`[${n}] ${title}`);
-    parts.push("");
-
-    const paras = paragraphs(lang, doc);
-
-    if (doc.source === "shamail") {
-      // narration = entry text; trailing "points" paragraphs hold lessons.
-      const narration = paras[0] ?? "";
-      parts.push(trimExcerpt(narration, 600));
-      parts.push("");
-
-      const tail = paras.slice(-2);
-      const bullets: string[] = [];
-      for (const p of tail) {
-        bullets.push(
-          ...p
-            .split(/\n+|\*+|•+/)
-            .map((s) => s.trim())
-            .filter((s) => s.length > 10),
-        );
-      }
-      const picked = bullets.slice(0, 2);
-      if (picked.length > 0) {
-        const keyHeader =
-          lang === "ur" ? "اہم نکات" : lang === "roman-ur" ? "Ehmi nikat" : "Key points";
-        parts.push(keyHeader);
-        parts.push("");
-        for (const b of picked) {
-          parts.push(`- ${trimExcerpt(b, 220)}`);
-        }
-        parts.push("");
-      }
-    } else {
-      const excerpt = trimExcerpt(paras.join(" "), 700);
-      parts.push(excerpt);
-      parts.push("");
-    }
+    const passage = extractPassage(lang, doc);
+    return { title, passage };
   });
 
-  const closing =
-    lang === "ur"
-      ? "مندرجہ بالا جواب صرف اوپر دیے گئے ذخیرے کے اندراجات سے لیا گیا ہے؛ ماخذ کے کارڈ نیچے موجود ہیں۔"
-      : lang === "roman-ur"
-        ? "Upar diya gaya jawab sirf in corpus entries se liya gaya hai; sources ke cards neeche hain."
-        : "Every statement above is drawn only from the cited corpus entries; source cards are listed below.";
+  // Build a natural response by weaving passages together
+  const parts: string[] = [];
 
-  parts.push(closing);
+  if (lang === "ur") {
+    // Urdu: flowing natural paragraphs
+    for (const { title, passage } of passages) {
+      parts.push(`«${title}» — ${passage}`);
+    }
+    parts.push("");
+    parts.push("مندرجہ بالا جواب صرف اوپر دیے گئے ذخیرے کے اندراجات سے لیا گیا ہے۔");
+  } else if (lang === "roman-ur") {
+    // Roman Urdu: flowing natural paragraphs
+    for (const { title, passage } of passages) {
+      parts.push(`"${title}" — ${passage}`);
+    }
+    parts.push("");
+    parts.push("Upar diya gaya jawab sirf in corpus entries se liya gaya hai.");
+  } else {
+    // English: weave facts naturally into flowing paragraphs
+    for (const { title, passage } of passages) {
+      parts.push(`${passage}`);
+    }
+    parts.push("");
+    parts.push("Every statement above is drawn only from the cited corpus entries.");
+  }
 
   return parts.join("\n");
 }

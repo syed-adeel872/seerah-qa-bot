@@ -305,11 +305,11 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
   }
 
 return (
-    <div className="min-h-screen w-full flex flex-col" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75%)' }}>
+    <div className="h-screen w-full flex flex-col" style={{ background: 'radial-gradient(circle at top, rgba(6, 78, 59, 0.35) 0%, rgba(3, 7, 18, 1) 75%)' }}>
       {/* messages */}
-      <div ref={listRef} className="max-w-4xl mx-auto w-full px-4 flex-1 flex flex-col">
+      <div ref={listRef} className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto px-4 pb-4 flex flex-col">
         {messages.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
+          <div className="flex flex-col items-center justify-center flex-1 w-full text-center mt-12">
             <div className="max-w-md">
               <h2 className="text-lg font-semibold text-foreground">
                 Ask anything about Seerah &amp; Shamail
@@ -317,7 +317,7 @@ return (
               <p className="mt-1 text-sm text-muted">{PREAMBLE}</p>
               <p className="mt-4 text-[11px] text-muted/70">{corpusSummary}</p>
             </div>
-<div className="flex max-w-2xl flex-wrap gap-2">
+<div className="flex flex-wrap justify-center gap-3 mt-8 max-w-3xl">
                {SAMPLE_QUESTIONS.map((s) => (
                  <button
                    key={s.question}
@@ -356,7 +356,7 @@ return (
       </div>
 
       {/* composer */}
-      <form onSubmit={onSubmit} className="border-t border-white/8 px-4 py-3 backdrop-blur sm:px-6 bg-transparent">
+      <form onSubmit={onSubmit} className="border-t border-white/8 px-4 py-3 backdrop-blur sm:px-6 bg-transparent shrink-0">
         <div className="mx-auto flex max-w-3xl items-center gap-2">
           <input
             value={input}

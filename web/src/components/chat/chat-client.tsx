@@ -173,7 +173,7 @@ function AssistantBubble({ m }: { m: Message }) {
   const isUrdu = answer.lang === "ur";
 
   return (
-    <div className="flex w-full justify-start">
+    <div className="flex w-full justify-start pl-4">
       <div className="max-w-[85%] text-left text-gray-200">
         <div className="rounded-xl bg-white/[0.03] px-4 py-3">
           <div className={cn("whitespace-pre-wrap text-sm leading-7", isUrdu && "font-ur rtl text-[15px] leading-8")}>
@@ -289,7 +289,7 @@ return (
 
       {/* scrollable message area */}
       <div className="flex-1 overflow-y-auto w-full">
-        <div ref={listRef} className="flex flex-col gap-6 pb-6 pt-4 max-w-4xl mx-auto w-full px-4">
+        <div ref={listRef} className="flex flex-col gap-6 pb-6 pt-4 max-w-4xl mx-auto w-full">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center flex-1 w-full text-center mt-12">
               <div className="max-w-md">
@@ -315,7 +315,7 @@ return (
 
           {messages.map((m, i) =>
             m.role === "user" ? (
-              <div key={i} className="flex w-full justify-end">
+              <div key={i} className="flex w-full justify-end px-4">
                 <div className="max-w-[85%] bg-emerald-900/40 rounded-2xl px-5 py-3 text-right">
                   <div className="flex items-start gap-2">
                     <div className="flex-1 whitespace-pre-wrap text-sm leading-7">{m.text}</div>
@@ -329,7 +329,7 @@ return (
           )}
 
           {busy && (
-            <div className="flex w-full justify-start">
+    <div className="flex w-full justify-start pl-4">
               <div className="flex items-center gap-1.5 px-2 py-3">
                 <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />
                 <span className="typing-dot h-2 w-2 rounded-full bg-emerald-400" />

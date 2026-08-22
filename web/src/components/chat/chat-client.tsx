@@ -175,7 +175,7 @@ function AssistantBubble({ m }: { m: Message }) {
   return (
     <div className="flex w-full justify-start">
       <div className="max-w-[85%] text-left text-gray-200">
-        <div className="rounded-xl bg-white/[0.03] px-4 py-3">
+        <div className="rounded-xl bg-white/[0.03] py-3 pr-4">
           <div className={cn("whitespace-pre-wrap text-sm leading-7", isUrdu && "font-ur rtl text-[15px] leading-8")}>
             {answer.text}
           </div>

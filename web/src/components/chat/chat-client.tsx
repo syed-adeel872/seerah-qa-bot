@@ -289,7 +289,7 @@ return (
 
       {/* scrollable message area */}
       <div className="flex-1 overflow-y-auto w-full">
-        <div ref={listRef} className="flex flex-col gap-6 pb-6 pt-4 max-w-4xl mx-auto w-full px-4">
+        <div ref={listRef} className="flex flex-col gap-6 pb-6 pt-4 max-w-4xl mx-auto w-full">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center flex-1 w-full text-center mt-12">
               <div className="max-w-md">
@@ -315,7 +315,7 @@ return (
 
           {messages.map((m, i) =>
             m.role === "user" ? (
-              <div key={i} className="flex w-full justify-end">
+              <div key={i} className="flex w-full justify-end pr-4">
                 <div className="max-w-[85%] bg-emerald-900/40 rounded-2xl px-5 py-3 text-right">
                   <div className="flex items-start gap-2">
                     <div className="flex-1 whitespace-pre-wrap text-sm leading-7">{m.text}</div>

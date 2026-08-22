@@ -21,6 +21,28 @@ function trimExcerpt(text: string, max = 420): string {
   return `${t.slice(0, cut > 0 ? cut : max)}…`;
 }
 
+/**
+ * Strip raw database formatting artifacts from corpus text so the output
+ * reads as natural prose rather than structured database fields.
+ */
+function cleanText(text: string): string {
+  return text
+    // Remove markdown-style headings: ## Heading, **Heading**, # Heading
+    .replace(/^#{1,3}\s+/gm, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    // Remove "Key points" / "Ehmi nikat" / "اہم نکات" section headers
+    .replace(/^(Key\s+points|Ehmi\s+nikat|اہم\s+نکات)\s*:?\s*$/gim, "")
+    // Remove bracketed list numbers: [1], [2], etc. at line starts
+    .replace(/^\[[\d]+\]\s*/gm, "")
+    // Normalize bullet markers to flowing text
+    .replace(/^[\s]*[-*•]\s+/gm, "")
+    // Collapse multiple blank lines into a single paragraph break
+    .replace(/\n{3,}/g, "\n\n")
+    // Trim
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Split an entry's plain text into paragraphs. */
 function paragraphs(lang: AnswerTarget, doc: IndexedDoc): string[] {
   let text: string;
@@ -41,31 +63,33 @@ function romanTitle(doc: IndexedDoc): string {
 }
 
 /**
- * Extract the most relevant excerpt from a document for natural integration.
- * Strips raw formatting artifacts and returns a clean passage.
+ * Extract the most relevant passage from a document for natural integration.
+ * Cleans raw formatting artifacts and returns a single flowing excerpt.
  */
 function extractPassage(lang: AnswerTarget, doc: IndexedDoc): string {
   const paras = paragraphs(lang, doc);
+
   if (doc.source === "shamail") {
-    // For shamail, take the narration (first paragraph) as the primary passage
-    const narration = paras[0] ?? "";
+    // Take the narration (first paragraph) as the primary passage
+    const narration = cleanText(paras[0] ?? "");
     const excerpt = trimExcerpt(narration, 500);
 
-    // Also gather lessons from tail paragraphs (without "Key points" heading)
+    // Gather lessons from tail paragraphs (cleaned, no heading)
     const tail = paras.slice(-2);
     const lessons: string[] = [];
     for (const p of tail) {
-      const items = p
-        .split(/\n+|\*+|•+/)
+      const items = cleanText(p)
+        .split(/\n+/)
         .map((s) => s.trim())
         .filter((s) => s.length > 10);
       lessons.push(...items);
     }
-    const lesson = lessons[0] ? `. ${trimExcerpt(lessons[0], 200)}` : "";
+    const lesson = lessons[0] ? ` ${trimExcerpt(lessons[0], 200)}` : "";
     return excerpt + lesson;
   }
+
   // For timeline, take the full text as a flowing passage
-  return trimExcerpt(paras.join(" "), 600);
+  return trimExcerpt(cleanText(paras.join(" ")), 600);
 }
 
 /**
@@ -78,36 +102,33 @@ export function generateDeterministicAnswer(
   lang: AnswerTarget,
 ): string {
   const passages = sources.map(({ doc }) => {
-    const title =
-      lang === "ur" ? doc.titleUr || doc.titleEn : lang === "roman-ur" ? romanTitle(doc) : doc.titleEn;
     const passage = extractPassage(lang, doc);
-    return { title, passage };
+    return passage;
   });
 
-  // Build a natural response by weaving passages together
   const parts: string[] = [];
 
   if (lang === "ur") {
-    // Urdu: flowing natural paragraphs
-    for (const { title, passage } of passages) {
-      parts.push(`«${title}» — ${passage}`);
+    // Urdu: flowing natural paragraphs without title brackets
+    for (const passage of passages) {
+      parts.push(passage);
     }
     parts.push("");
-    parts.push("مندرجہ بالا جواب صرف اوپر دیے گئے ذخیرے کے اندراجات سے لیا گیا ہے۔");
+    parts.push("مندرجہ بالا جواب صرف ذکر کردہ سیرت و شمائل کے اندراجات پر مبنی ہے۔");
   } else if (lang === "roman-ur") {
     // Roman Urdu: flowing natural paragraphs
-    for (const { title, passage } of passages) {
-      parts.push(`"${title}" — ${passage}`);
+    for (const passage of passages) {
+      parts.push(passage);
     }
     parts.push("");
-    parts.push("Upar diya gaya jawab sirf in corpus entries se liya gaya hai.");
+    parts.push("Upar diya gaya jawab sirf zikr kiye gaye corpus entries par mabni hai.");
   } else {
-    // English: weave facts naturally into flowing paragraphs
-    for (const { title, passage } of passages) {
-      parts.push(`${passage}`);
+    // English: natural flowing paragraphs
+    for (const passage of passages) {
+      parts.push(passage);
     }
     parts.push("");
-    parts.push("Every statement above is drawn only from the cited corpus entries.");
+    parts.push("The above is based on the cited Seerah and Shamail sources.");
   }
 
   return parts.join("\n");

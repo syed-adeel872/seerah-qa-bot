@@ -6,7 +6,7 @@ export async function Disclaimer() {
   const { corpus } = getEngine();
 
   return (
-    <footer className="border-t border-white/8 bg-background/95 px-4 py-3 text-center backdrop-blur">
+    <footer className="shrink-0 border-t border-gray-800/50 bg-gray-950/80 backdrop-blur-md px-4 py-3 text-center">
       <div className="mx-auto max-w-3xl">
         <div className="text-[11px] leading-relaxed text-muted/80">
           Answers are generated strictly from a verified Seerah &amp; Shamail

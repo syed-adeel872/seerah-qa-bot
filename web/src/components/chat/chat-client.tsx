@@ -175,7 +175,7 @@ function AssistantBubble({ m }: { m: Message }) {
   return (
     <div className="flex w-full justify-start">
       <div className="max-w-[85%] text-left text-gray-200">
-        <div className="rounded-xl bg-white/[0.03] py-3 pr-4">
+        <div className="rounded-xl bg-white/[0.03] px-4 py-3">
           <div className={cn("whitespace-pre-wrap text-sm leading-7", isUrdu && "font-ur rtl text-[15px] leading-8")}>
             {answer.text}
           </div>
@@ -289,7 +289,7 @@ return (
 
       {/* scrollable message area */}
       <div className="flex-1 overflow-y-auto w-full">
-        <div ref={listRef} className="flex flex-col gap-6 pb-6 pt-4 max-w-4xl mx-auto w-full">
+        <div ref={listRef} className="flex flex-col gap-6 pb-6 pt-4 max-w-4xl mx-auto w-full px-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center flex-1 w-full text-center mt-12">
               <div className="max-w-md">
@@ -315,7 +315,7 @@ return (
 
           {messages.map((m, i) =>
             m.role === "user" ? (
-              <div key={i} className="flex w-full justify-end pr-4">
+              <div key={i} className="flex w-full justify-end">
                 <div className="max-w-[85%] bg-emerald-900/40 rounded-2xl px-5 py-3 text-right">
                   <div className="flex items-start gap-2">
                     <div className="flex-1 whitespace-pre-wrap text-sm leading-7">{m.text}</div>
@@ -343,7 +343,7 @@ return (
 
       {/* persistent composer — always visible at bottom */}
       <form onSubmit={onSubmit} className="shrink-0 w-full border-t border-gray-800/50 bg-gray-950/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-3">
+        <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-3">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}

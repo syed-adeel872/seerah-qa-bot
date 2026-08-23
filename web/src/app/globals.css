@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b100d;
+  --background: #060a08;
   --foreground: #e9f0ea;
   --muted: #a6bcae;
   --accent: #34d399;
   --accent-strong: #10b981;
   --accent-soft: rgba(52, 211, 153, 0.14);
-  --border: #233229;
+  --border: #1a2a22;
   --warn: #fbbf24;
   --warn-soft: rgba(251, 191, 36, 0.12);
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.12);
-  --card: #121a15;
-  --card-hi: #16211a;
+  --card: #0c1210;
+  --card-hi: #101a15;
+  --gold: #d4a853;
+  --gold-soft: rgba(212, 168, 83, 0.1);
 }
 
 * {
@@ -27,8 +29,8 @@ body {
 
 body {
   background:
-    radial-gradient(1200px 600px at 15% -10%, rgba(16, 185, 129, 0.12), transparent 60%),
-    radial-gradient(900px 500px at 85% 0%, rgba(251, 191, 36, 0.06), transparent 55%),
+    radial-gradient(1200px 600px at 15% -10%, rgba(16, 185, 129, 0.10), transparent 60%),
+    radial-gradient(900px 500px at 85% 0%, rgba(212, 168, 83, 0.05), transparent 55%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;

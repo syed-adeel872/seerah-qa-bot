@@ -202,14 +202,11 @@ function SourceModal({ citation, index, onClose }: { citation: Citation; index: 
           </div>
 
           {citation.hawala?.en && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-0.5 text-[11px] text-emerald-300/80">
-                {citation.hawala.en}
-              </span>
+            <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400/60 mb-1.5">Reference</p>
+              <p className="text-sm text-emerald-100/90 leading-relaxed">{citation.hawala.en}</p>
               {citation.hawala.ur && (
-                <span className="font-ur inline-flex items-center rounded-full border border-white/[0.06] bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/40" dir="rtl">
-                  {citation.hawala.ur}
-                </span>
+                <p className="font-ur text-sm text-emerald-200/60 mt-1 leading-relaxed" dir="rtl">{citation.hawala.ur}</p>
               )}
             </div>
           )}

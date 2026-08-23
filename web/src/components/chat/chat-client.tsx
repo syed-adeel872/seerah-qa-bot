@@ -311,6 +311,7 @@ function AssistantBubble({ m }: { m: Message }) {
 
   const isBlocked = answer.status === "blocked";
   const isUrdu = answer.lang === "ur";
+  const showCitations = answer.status === "answered" && answer.citations.length > 0;
 
   return (
     <>
@@ -321,7 +322,7 @@ function AssistantBubble({ m }: { m: Message }) {
               {answer.text}
             </div>
 
-            {answer.status === "answered" && answer.citations.length > 0 && (
+            {showCitations && (
               <>
                 <SourceChips citations={answer.citations} onOpen={openModal} />
                 <SourceList citations={answer.citations} />
@@ -351,7 +352,7 @@ function AssistantBubble({ m }: { m: Message }) {
           </div>
           <div className="mt-1 px-1 flex items-center gap-2">
             <CopyButton text={answer.text} />
-            <ShareButton text={answer.text} citations={answer.citations} />
+            {showCitations && <ShareButton text={answer.text} citations={answer.citations} />}
           </div>
         </div>
       </div>

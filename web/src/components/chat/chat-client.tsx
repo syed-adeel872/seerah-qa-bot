@@ -158,7 +158,7 @@ function SourceModal({ citation, index, onClose }: { citation: Citation; index: 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
@@ -166,24 +166,24 @@ function SourceModal({ citation, index, onClose }: { citation: Citation; index: 
     >
       <div
         ref={modalRef}
-        className="w-full max-w-md rounded-2xl border border-white/[0.06] bg-[#111311] shadow-2xl"
+        className="w-full max-w-lg rounded-2xl border border-emerald-500/20 bg-gray-950 shadow-2xl shadow-emerald-500/10"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <div className="flex items-center justify-between border-b border-gray-800/60 px-5 py-4">
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[10px] font-semibold text-emerald-400/90">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-[11px] font-bold text-emerald-300">
               {index + 1}
             </span>
-            <span className="text-[11px] font-medium tracking-wide text-white/40 uppercase">
-              {citation.source === "shamail" ? "Shamail" : "Seerah"}
+            <span className="text-xs font-medium uppercase tracking-wider text-emerald-400/70">
+              {citation.source === "shamail" ? "Shamail" : "Seerah Timeline"}
             </span>
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-1 text-white/30 transition hover:bg-white/5 hover:text-white/70 cursor-pointer"
+            className="rounded-lg p-1.5 text-muted/50 transition hover:bg-white/5 hover:text-foreground cursor-pointer"
             aria-label="Close"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -191,38 +191,36 @@ function SourceModal({ citation, index, onClose }: { citation: Citation; index: 
         </div>
 
         {/* Body */}
-        <div className="px-5 pb-5 space-y-4">
+        <div className="px-5 py-4 space-y-3">
           <div>
-            <p className="text-[11px] text-white/30 mb-1">English</p>
-            <p className="text-sm font-medium text-white/90 leading-relaxed">{citation.title.en}</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted/50 mb-1">English</p>
+            <p className="text-sm font-medium text-gray-100 leading-relaxed">{citation.title.en}</p>
           </div>
           <div>
-            <p className="text-[11px] text-white/30 mb-1" dir="rtl">اردو</p>
-            <p className="font-ur text-sm font-medium text-white/75 leading-relaxed" dir="rtl">{citation.title.ur}</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted/50 mb-1">اردو</p>
+            <p className="font-ur text-sm font-medium text-gray-200 leading-relaxed" dir="rtl">{citation.title.ur}</p>
           </div>
-
           {citation.hawala?.en && (
-            <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400/60 mb-1.5">Reference</p>
-              <p className="text-sm text-emerald-100/90 leading-relaxed">{citation.hawala.en}</p>
+            <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/10 px-3 py-2">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-400/60 mb-0.5">Hawala / Reference</p>
+              <p className="text-xs text-emerald-200/80">{citation.hawala.en}</p>
               {citation.hawala.ur && (
-                <p className="font-ur text-sm text-emerald-200/60 mt-1 leading-relaxed" dir="rtl">{citation.hawala.ur}</p>
+                <p className="font-ur text-xs text-emerald-200/60 mt-0.5" dir="rtl">{citation.hawala.ur}</p>
               )}
             </div>
           )}
-
           {citation.category && (
-            <span className="inline-flex items-center rounded-full bg-white/[0.04] px-2.5 py-0.5 text-[10px] text-white/35">
-              {citation.category.name.en}
-            </span>
+            <div className="text-[11px] text-muted/60">
+              Category: <span className="text-emerald-300/70">{citation.category.name.en}</span>
+            </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="border-t border-white/[0.04] px-5 py-3 flex justify-end">
+        <div className="border-t border-gray-800/60 px-5 py-3 flex justify-end">
           <button
             onClick={onClose}
-            className="rounded-full bg-white/[0.06] px-4 py-1.5 text-[11px] font-medium text-white/50 transition hover:bg-white/[0.1] hover:text-white/70 cursor-pointer"
+            className="rounded-lg bg-emerald-600/15 px-4 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-600/25 cursor-pointer"
           >
             Close
           </button>

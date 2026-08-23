@@ -4,6 +4,7 @@ import { queryTokens, tokenize, ALIAS_GROUP_NAMES } from "../search/tokenize";
 import { detectQueryLang, answerLang, type QueryLang } from "../l10n/detect";
 import { checkBlockers, refusalText, type BlockKind } from "../guardrails/blockers";
 import { generateDeterministicAnswer, type AnswerTarget } from "./generate";
+import { generateWithLlm } from "./llm-generate";
 import type { Citation, IndexedDoc } from "../corpus/schema";
 
 /**
@@ -375,9 +376,11 @@ async function answerFromQuery(
 
   const sourcesForText = confirmed.map((c) => ({ doc: c.doc }));
 
-  // Deterministic grounded generation: the only answer path (zero-hallucination,
-  // spec-mandated safe fallback). No external LLM is used.
-  const text = generateDeterministicAnswer(sourcesForText, target);
+  // Try LLM-powered generation first for concise, natural answers.
+  // Falls back to deterministic generation on any failure.
+  let text = generateDeterministicAnswer(sourcesForText, target);
+  const llmText = await generateWithLlm(retrievalQuery, sourcesForText, target);
+  if (llmText) text = llmText;
   // Report the retrieval engine honestly: if the winning candidate carried a
   // real cosine score the hybrid/semantic pipeline executed, otherwise the
   // answer was grounded by BM25 alone.

@@ -21,6 +21,43 @@ import type { Citation, IndexedDoc } from "../corpus/schema";
  *   7. deterministic grounded generation (zero-hallucination)
  */
 
+/**
+ * Patterns that detect when the LLM generated a refusal or disclaimer instead
+ * of a genuine answer. When these fire, citations are stripped so the UI never
+ * shows source cards for a refusal message.
+ */
+const LLM_REFUSAL_PATTERNS: RegExp[] = [
+  // English fatwa/shari'i refusals (from system prompt Rule 1)
+  /shari['']?\s?i\s?masla/i,
+  /religious ruling/i,
+  /shari['']?ah?\s+ruling/i,
+  /consult\s+a\s+qualified\s+(scholar|aalim|mufti)/i,
+  /outside\s+what\s+i\s+can\s+answer/i,
+  // English out-of-corpus refusals (from system prompt Rule 2)
+  /can\s+only\s+answer\s+(from|questions\s+from)\s+(the\s+)?(seerah|shamail)/i,
+  /please\s+ask\s+about\s+his\s+life/i,
+  // Roman Urdu fatwa refusals
+  /shari['']?ah?\s+fatwa/i,
+  /shari['']?ah?\s+ruling/i,
+  /daaira[-\s]?e[-\s]?kaam\s+mein\s+nahi/i,
+  /mustanad\s+aalim/i,
+  // Roman Urdu out-of-corpus refusals
+  /sirf\s+(seerah|shamail)\s+corpus\s+se/i,
+  /corpus\s+se\s+bahar/i,
+  // Urdu script fatwa refusals
+  /(\u0634\u0631\u0639\u06CC\s+\u0641\u062A\u0648\u06CC\u06D2|\u0634\u0631\u0639\u06CC\s+\u0645\u0633\u0626\u0644\u06C1)/,
+  /(\u0627\u0633\u062A\u0645\u0646\u062F\s+\u0639\u0627\u0644\u0645)/,
+  /(\u062F\u0627\u0626\u0631\u06C1[\u0610\s]*\u06A9\u0627\u0631\s+\u0645\u06CC\u06BA\s+\u0646\u06C1\u06CC\u06BA)/,
+  // Urdu script out-of-corpus refusals
+  /(\u0633\u06CC\u0631\u062A\s+\u0648\u0627\u0634\u0645\u0627\u0626\u0644\s+\u06A9\u06D2\u0630\u062E\u06CC\u0631\u06C1\s+\u0633\u06D2)/,
+  /(\u0628\u0631\u0627[\u0610\s]*\u06A9\u0631\u0645\s+\u0627\u0633\s+\u06A9\u06D2\s+\u0632\u0646\u062F\u06AF\u06CC)/,
+];
+
+/** Check if the LLM output is a refusal/disclaimer rather than a real answer. */
+function isLlmRefusal(text: string): boolean {
+  return LLM_REFUSAL_PATTERNS.some((re) => re.test(text));
+}
+
 export type AnswerStatus = "answered" | "blocked" | "out_of_corpus";
 
 /**
@@ -381,6 +418,25 @@ async function answerFromQuery(
   let text = generateDeterministicAnswer(sourcesForText, target);
   const llmText = await generateWithLlm(retrievalQuery, sourcesForText, target);
   if (llmText) text = llmText;
+
+  // POST-LLM REFUSAL INSPECTION: If the LLM generated a refusal or disclaimer
+  // instead of a genuine answer, strip citations so the UI never shows source
+  // cards for a refusal message. This catches fatwa/corpus-scope refusals that
+  // slipped past the deterministic blocker (e.g. "qaza", "namaz timing").
+  if (isLlmRefusal(text)) {
+    return {
+      status: "blocked",
+      kind: "fatwa",
+      text,
+      lang,
+      citations: [],
+      engine: "deterministic",
+      disclaimer: getDisclaimer(),
+      corpusVersion: getEngine().corpus.corpusVersion,
+      matched: { topScore: best.bm25Score, coverage },
+    };
+  }
+
   // Report the retrieval engine honestly: if the winning candidate carried a
   // real cosine score the hybrid/semantic pipeline executed, otherwise the
   // answer was grounded by BM25 alone.

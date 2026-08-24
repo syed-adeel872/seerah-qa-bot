@@ -23,13 +23,29 @@ const FATWA_PATTERNS: Array<{ re: RegExp; hint: string }> = [
   { re: /\b(take interest|charging interest|taking (riba|usury|bribes?)|gambl(e|ing)|lotter(ies|y))\b/i, hint: "interest/gambling" },
   { re: /\b(am i allowed|can i (take|do|marry|travel|pray|give|put|borrow|lend|eat|drink))\b/i, hint: "can/am I allowed" },
   { re: /\b(what is the ruling|ruling (on|about)|shari[ae]h? ruling)\b/i, hint: "sharia ruling" },
+  // english fiqh / ibadat terms
+  { re: /\b(qaza|qada|qaza namaz|missed prayer|missed fast)\b/i, hint: "qaza/qada" },
+  { re: /\b(namaz (time|timing|ki|ka|ke)|prayer (time|timing))\b/i, hint: "namaz timing" },
+  { re: /\b(roza|roza (rakhna|todna)|fasting (rule|karna))\b/i, hint: "roza/fasting" },
+  { re: /\b(zakat|zakat (amount|dena|ki))\b/i, hint: "zakat" },
+  { re: /\b( nikah|talaq|divorce (ruling|rule)|marriage (ruling|rule|valid|invalid))\b/i, hint: "nikah/talaq" },
+  { re: /\b(wudu|wuzu|ablution|ghusl|tayammum)\b/i, hint: "wudu/ghusl" },
+  { re: /\b(jummah|jumma|friday prayer)\b/i, hint: "jummah" },
   // urdu script
   { re: /(\u0641\u062A\u0648\u06CC|\u0641\u062A\u0627\u0648\u06CC)/, hint: "فتوی (fatwa)" },
   { re: /(\u062C\u0627\u0626\u0632 \u06C1\u06D2|\u062C\u0627\u0626\u0632 \u0646\u06C1\u06CC\u06BA|\u062D\u0644\u0627\u0644 \u06C1\u06D2|\u062D\u0631\u0627\u0645 \u06C1\u06D2|\u0645\u06A9\u0631\u0648\u06C1)/, hint: "جائز/حلال/حرام/مکروہ" },
   { re: /(\u0634\u0631\u0639\u06CC \u062D\u06A9\u0645|\u062F\u06CC\u0646\u06CC \u062D\u06A9\u0645|\u06A9\u0627 \u062D\u06A9\u0645 \u06A9\u06CC\u0627|\u062D\u06A9\u0645 \u062F\u06CC\u06CC\u06BA)/, hint: "شرعی حکم (sharia ruling)" },
   { re: /(\u0633\u0648\u062F \u0644\u06CC\u0646\u0627|\u0633\u0648\u062F \u062F\u06CC\u0646\u0627|\u062C\u0648\u0627 \u0644\u06AF\u0627\u0646\u0627|\u062C\u0648\u0627 \u062F\u06CC\u0646\u0627)/, hint: "سود/جوا (interest/gambling)" },
+  // urdu fiqh / ibadat terms
+  { re: /(\u0642\u0636\u0627|\u0642\u0636\u0627\u06BA \u0646\u0645\u0627\u0632)/, hint: "قضا / قضاء نماز" },
+  { re: /(\u0646\u0645\u0627\u0632 \u06A9\u0627 \u0648\u0642\u062A|\u0646\u0645\u0627\u0632 \u06A9\u06CC \u0631\u0642\u0645)/, hint: "نماز کا وقت" },
+  { re: /(\u0631\u0648\u0632\u06C1|\u0631\u0648\u0632\u06C1 \u0631\u062E\u0646\u0627|\u0631\u0648\u0632\u06C1 \u062A\u0648\u062F\u0646\u0627)/, hint: "روزہ" },
+  { re: /(\u0632\u06A9\u0627\u062A|\u0632\u06A9\u0627\u062A \u06A9\u06CC \u0645\u0642\u062F\u0627\u0631)/, hint: "زکوٰة" },
+  { re: /(\u0646\u06A9\u0627\u06C1|\u0637\u0644\u0627\u0642|\u0637\u0644\u0627\u0642 \u06A9\u0627 \u062D\u06A9\u0645)/, hint: "نکاح/طلاق" },
+  { re: /(\u0648\u0636\u0648|\u0648\u0636\u0648 \u06A9\u0627 \u062D\u06A9\u0645|\u063A\u0633\u0644|\u063A\u0633\u0644 \u06A9\u0627 \u062D\u06A9\u0645)/, hint: "وضو/غسل" },
   // roman-urdu
   { re: /\b(ri[sz]wa?|sud|jaiz|jaayaz|booaa|gawah)\b/i, hint: "riwa/sud/jaiz" },
+  { re: /\b(qaza|qada|namaz (ka|ki|ke) waqt|roza|roza (rakhna|todna)|zakat|nikah|talaq|wuzu|wudu|ghusl|jumma|jummah)\b/i, hint: "fiqh/ibadat (roman-urdu)" },
 ];
 
 const INJECTION_PATTERNS: Array<{ re: RegExp; hint: string }> = [

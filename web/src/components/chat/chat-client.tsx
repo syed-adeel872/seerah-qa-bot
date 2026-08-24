@@ -306,7 +306,10 @@ function AssistantBubble({ m }: { m: Message }) {
             </div>
 
             {showCitations && (
-              <SourceChips citations={answer.citations} onOpen={openModal} />
+              <>
+                <p className="text-sm font-semibold text-gray-400 mt-3 mb-2">References</p>
+                <SourceChips citations={answer.citations} onOpen={openModal} />
+              </>
             )}
 
             {isBlocked && (

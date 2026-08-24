@@ -30,7 +30,8 @@ BUNYADI QAIDAAYEN:
 5. LAZY FALLBACK PAR SAKHT PAABANDI: Agar "Retrieved corpus passages" mein KUCH BHI text hai, toh kabhi mat bolo "is khaas baat ki tafseel nahi hai." Sirf tab bolo jab "Retrieved corpus passages" BILKUL KHALI ho (zero documents). Jab context ho — chahe partial ho, related ho, tangentially related ho — toh us se MEHDood jawab zaroor banao.
 6. SIRF CONTEXT PE LIKHO: Apna poora jawab sirf passages mein likhi baaton par likho. Bahar ka knowledge mat daalo. Lekin passages jo batate hain usko achi tarah describe karo.
 7. ANDAR KI BAAT MAT DIKHAO: Kabhi bhi bracket mein translations, search queries, ya internal reasoning mat likho. Tumhara jawab bilkul natural aur insaan jaisa hona chahiye.
-8. FIZool BAAT MAT KARO: Sawal mat dohrao. Sirf jawab do.`;
+8. FIZool BAAT MAT KARO: Sawal mat dohrao. Sirf jawab do.
+9. SCRIPT KI PAAKIZGI (ZAROORI): Roman Urdu mein SIRF Latin/Finglisi huroof istemal karo. Kabhi bhi Devanagari (Hindi), Urdu script, ya kisi ghair-Latin Unicode script ko Roman Urdu mein mat mix karo. Agar koi lafz Urdu/Arabi hai toh uski Roman transliteration likho. Jaise "satrah" (17), "tera" (13), "chaalis" (40). Numbers bhi Arabic digits (0-9) mein likho ya saaf Roman mein spell karo. corrupted tokens mat bhejo.`;
 
 const SYSTEM_PROMPT_UR = `آپ سیروت و شمائل کے اسسٹنٹ ہیں — نبی ﷺ کے بارے میں سوالات کا جواب دیتے ہیں۔
 
@@ -63,6 +64,16 @@ function systemPromptForLang(lang: AnswerTarget): string {
   if (lang === "ur") return SYSTEM_PROMPT_UR;
   if (lang === "roman-ur") return SYSTEM_PROMPT_ROMAN_UR;
   return SYSTEM_PROMPT_EN;
+}
+
+/** Strip Devanagari, Arabic script, and other non-Latin characters from Roman Urdu text. */
+function sanitizeRomanUrdu(text: string): string {
+  // Remove Devanagari block (U+0900–U+097F), Arabic block (U+0600–U+06FF),
+  // and other common non-Latin Unicode blocks, but keep Latin, digits, punctuation, whitespace
+  return text.replace(/[\u0900-\u097F\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF\u1F00-\u1FFF]+/g, (match) => {
+    // If it's a known transliterated word context, try to provide a clean fallback
+    return "";
+  }).replace(/\s{2,}/g, " ").trim();
 }
 
 /**
@@ -136,7 +147,8 @@ export async function generateWithLlm(
         const json = (await res.json()) as {
           choices?: Array<{ message?: { content?: string } }>;
         };
-        const text = (json?.choices?.[0]?.message?.content ?? "").trim();
+        const raw = (json?.choices?.[0]?.message?.content ?? "").trim();
+        const text = lang === "roman-ur" ? sanitizeRomanUrdu(raw) : raw;
         if (text && text.length > 10) return text;
       } catch {
         if (attempt === 0) await new Promise((r) => setTimeout(r, 400));

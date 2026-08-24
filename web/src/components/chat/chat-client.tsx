@@ -257,34 +257,6 @@ function SourceChips({ citations, onOpen }: { citations: Citation[]; onOpen: (c:
   );
 }
 
-/* ─── Source List (expanded reference below chips) ─── */
-function SourceList({ citations }: { citations: Citation[] }) {
-  return (
-    <div className="flex flex-col gap-2 mt-3 text-xs text-muted/80">
-      {citations.map((c, i) => (
-        <div
-          key={c.id}
-          className="border-l-2 border-emerald-500/30 pl-3 py-1"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <span className="font-medium text-emerald-300/80" dir="ltr">
-              [{i + 1}] {c.title.en}
-            </span>
-            <span className="font-medium text-emerald-300/60" dir="rtl">
-              {c.title.ur}
-            </span>
-          </div>
-          {c.hawala?.en && (
-            <div className="mt-0.5 text-[10px] text-muted/60">
-              Hawala: {c.hawala.en}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /* ─── Assistant Bubble ─── */
 function AssistantBubble({ m }: { m: Message }) {
   const [modalCitation, setModalCitation] = useState<{ citation: Citation; index: number } | null>(null);
@@ -323,10 +295,7 @@ function AssistantBubble({ m }: { m: Message }) {
             </div>
 
             {showCitations && (
-              <>
-                <SourceChips citations={answer.citations} onOpen={openModal} />
-                <SourceList citations={answer.citations} />
-              </>
+              <SourceChips citations={answer.citations} onOpen={openModal} />
             )}
 
             {isBlocked && (

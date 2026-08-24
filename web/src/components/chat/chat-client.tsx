@@ -227,14 +227,14 @@ function SourceModal({ citation, index, onClose }: { citation: Citation; index: 
           )}
           {citation.textEn && (
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted/50 mb-1.5">Full Text</p>
-              <div className="rounded-lg bg-gray-800/50 px-4 py-3 text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">{citation.textEn}</div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted/50 mb-1.5">English Translation</p>
+              <div className="rounded-lg bg-gray-800/50 p-4 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">{citation.textEn}</div>
             </div>
           )}
           {citation.textUr && (
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted/50 mb-1.5" dir="rtl">مکمل متن</p>
-              <div className="font-ur rounded-lg bg-gray-800/50 px-4 py-3 text-sm text-gray-200 leading-relaxed whitespace-pre-wrap text-right" dir="rtl">{citation.textUr}</div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted/50 mb-1.5 text-right" dir="rtl">اردو متن</p>
+              <div className="font-ur rounded-lg bg-gray-800/50 p-4 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap text-right max-h-48 overflow-y-auto" dir="rtl">{citation.textUr}</div>
             </div>
           )}
         </div>

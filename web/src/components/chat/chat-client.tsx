@@ -444,7 +444,7 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
               Fatwa-Safe
             </span>
             <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] text-muted">
-              EN · Roman Urdu
+              EN · UR · Roman
             </span>
           </div>
         </div>

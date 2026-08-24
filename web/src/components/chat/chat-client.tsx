@@ -7,6 +7,17 @@ import { redirectInfo } from "@/lib/guardrails/blockers";
 import type { Answer } from "@/lib/engine/answer";
 import type { Citation } from "@/lib/corpus/schema";
 
+/** Parse **bold** markdown into <strong> elements. */
+function renderBoldText(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-semibold text-white/95">{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 interface Message {
   role: "user" | "assistant";
   text: string;
@@ -291,7 +302,7 @@ function AssistantBubble({ m }: { m: Message }) {
         <div className="max-w-[85%] text-left text-gray-200">
           <div className="rounded-xl bg-white/[0.03] px-4 py-3">
             <div className={cn("whitespace-pre-wrap text-sm leading-7", isUrdu && "font-ur rtl text-[15px] leading-8")}>
-              {answer.text}
+              {renderBoldText(answer.text)}
             </div>
 
             {showCitations && (

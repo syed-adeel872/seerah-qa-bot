@@ -9,9 +9,10 @@ import type { Citation } from "@/lib/corpus/schema";
 
 /** Parse **bold** markdown into <strong> elements. */
 function renderBoldText(text: string): React.ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const cleaned = text.replace(/\*{4,}/g, "");
+  const parts = cleaned.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       return <strong key={i} className="font-semibold text-white/95">{part.slice(2, -2)}</strong>;
     }
     return <span key={i}>{part}</span>;
@@ -369,10 +370,14 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   async function ask(question: string) {
     const q = question.trim();
     if (!q || busy) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setInput("");
     setBusy(true);
     setMessages((prev) => [...prev, { role: "user", text: q }]);
@@ -381,8 +386,10 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
+        signal: controller.signal,
       });
       const data = (await res.json()) as Answer & { error?: string };
+      if (controller.signal.aborted) return;
       if (!res.ok || data.error) {
         setMessages((prev) => [
           ...prev,
@@ -394,16 +401,21 @@ export function ChatClient({ corpusSummary }: { corpusSummary: string }) {
           { role: "assistant", text: data.text, answer: data },
         ]);
       }
-    } catch {
+    } catch (err) {
+      if (controller.signal.aborted) return;
       setMessages((prev) => [
         ...prev,
         { role: "assistant", text: "", error: true },
       ]);
     } finally {
-      setBusy(false);
-      requestAnimationFrame(() => endRef.current?.scrollIntoView({ behavior: "smooth" }));
+      if (!controller.signal.aborted) {
+        setBusy(false);
+        requestAnimationFrame(() => endRef.current?.scrollIntoView({ behavior: "smooth" }));
+      }
     }
   }
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();

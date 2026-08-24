@@ -36,6 +36,11 @@ const LLM_REFUSAL_PATTERNS: RegExp[] = [
   // English out-of-corpus refusals (from system prompt Rule 2)
   /can\s+only\s+answer\s+(from|questions\s+from)\s+(the\s+)?(seerah|shamail)/i,
   /please\s+ask\s+about\s+his\s+life/i,
+  // English lazy fallback (Rule 5)
+  /i\s+don['']?t\s+have\s+(details|information|specific)\s+(about|on|for)/i,
+  /no\s+(details|information|specific\s+data)\s+(about|on|for|available)/i,
+  /i\s+cannot\s+provide\s+details/i,
+  /beyond\s+the\s+scope/i,
   // Roman Urdu fatwa refusals
   /shari['']?ah?\s+fatwa/i,
   /shari['']?ah?\s+ruling/i,
@@ -44,6 +49,9 @@ const LLM_REFUSAL_PATTERNS: RegExp[] = [
   // Roman Urdu out-of-corpus refusals
   /sirf\s+(seerah|shamail)\s+corpus\s+se/i,
   /corpus\s+se\s+bahar/i,
+  // Roman Urdu lazy fallback
+  /is\s+khaas\s+baat\s+ki\s+tafseel\s+nahi/i,
+  /tafseel\s+nahi\s+hai/i,
   // Urdu script fatwa refusals
   /(\u0634\u0631\u0639\u06CC\s+\u0641\u062A\u0648\u06CC\u06D2|\u0634\u0631\u0639\u06CC\s+\u0645\u0633\u0626\u0644\u06C1)/,
   /(\u0627\u0633\u062A\u0645\u0646\u062F\s+\u0639\u0627\u0644\u0645)/,
@@ -51,6 +59,12 @@ const LLM_REFUSAL_PATTERNS: RegExp[] = [
   // Urdu script out-of-corpus refusals
   /(\u0633\u06CC\u0631\u062A\s+\u0648\u0627\u0634\u0645\u0627\u0626\u0644\s+\u06A9\u06D2\u0630\u062E\u06CC\u0631\u06C1\s+\u0633\u06D2)/,
   /(\u0628\u0631\u0627[\u0610\s]*\u06A9\u0631\u0645\s+\u0627\u0633\s+\u06A9\u06D2\s+\u0632\u0646\u062F\u06AF\u06CC)/,
+  // Urdu script lazy fallback
+  /(\u0627\u0633\u062E\u0627\u0635\s+\u0628\u0627\u062A\s+\u06A9\u06CC\s+\u062A\u0641\u0635\u06CC\u0644\s+\u0646\u06C1\u06CC\u06BA)/,
+  // System prompt leakage detection
+  /system\s+prompt/i,
+  /my\s+(rules|instructions|guidelines)\s+(are|say|tell)/i,
+  /i\s+am\s+(told|instructed|programmed)\s+to/i,
 ];
 
 /** Check if the LLM output is a refusal/disclaimer rather than a real answer. */

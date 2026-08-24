@@ -66,14 +66,9 @@ function systemPromptForLang(lang: AnswerTarget): string {
   return SYSTEM_PROMPT_EN;
 }
 
-/** Strip Devanagari, Arabic script, and other non-Latin characters from Roman Urdu text. */
+/** Strip all non-ASCII characters from Roman Urdu text, keeping only Latin, digits, punctuation, whitespace. */
 function sanitizeRomanUrdu(text: string): string {
-  // Remove Devanagari block (U+0900–U+097F), Arabic block (U+0600–U+06FF),
-  // and other common non-Latin Unicode blocks, but keep Latin, digits, punctuation, whitespace
-  return text.replace(/[\u0900-\u097F\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF\u1F00-\u1FFF]+/g, (match) => {
-    // If it's a known transliterated word context, try to provide a clean fallback
-    return "";
-  }).replace(/\s{2,}/g, " ").trim();
+  return text.replace(/[^\x00-\x7F]+/g, " ").replace(/\s{2,}/g, " ").trim();
 }
 
 /**
@@ -149,7 +144,7 @@ export async function generateWithLlm(
         };
         const raw = (json?.choices?.[0]?.message?.content ?? "").trim();
         const text = lang === "roman-ur" ? sanitizeRomanUrdu(raw) : raw;
-        if (text && text.length > 10) return text;
+        if (text && text.length > 0) return text;
       } catch {
         if (attempt === 0) await new Promise((r) => setTimeout(r, 400));
       }

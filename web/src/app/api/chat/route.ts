@@ -22,6 +22,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_question" }, { status: 400 });
   }
 
-  const answer = await answerQuestion(parsed.data.question);
-  return NextResponse.json(answer);
+  try {
+    const answer = await answerQuestion(parsed.data.question);
+    return NextResponse.json(answer);
+  } catch (err) {
+    console.error("[api/chat] answerQuestion failed:", err);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
 }

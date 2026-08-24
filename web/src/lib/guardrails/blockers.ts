@@ -31,6 +31,20 @@ const FATWA_PATTERNS: Array<{ re: RegExp; hint: string }> = [
   { re: /\b( nikah|talaq|divorce (ruling|rule)|marriage (ruling|rule|valid|invalid))\b/i, hint: "nikah/talaq" },
   { re: /\b(wudu|wuzu|ablution|ghusl|tayammum)\b/i, hint: "wudu/ghusl" },
   { re: /\b(jummah|jumma|friday prayer)\b/i, hint: "jummah" },
+  // additional english fiqh terms
+  { re: /\b(mahr|dower|dowry)\b/i, hint: "mahr/dowry" },
+  { re: /\b(iddat|iddah|waiting period)\b/i, hint: "iddat" },
+  { re: /\b(mut['']ah|sigheh|temporary marriage)\b/i, hint: "mut'ah" },
+  { re: /\b(sawm|salat|salah)\b/i, hint: "sawm/salat" },
+  { re: /\b(sajdah|sujud|prostration)\b/i, hint: "sajdah/sujud" },
+  { re: /\b(khitan|circumcision)\b/i, hint: "khitan" },
+  { re: /\b(janazah|kafan|burial (rite|rule))\b/i, hint: "janazah/burial" },
+  { re: /\b(inheritance|mirath|wasit)\b/i, hint: "inheritance/mirath" },
+  { re: /\b(zabihah|qurbani|aqeeqah)\b/i, hint: "zabihah/qurbani" },
+  { re: /\b(ta['']?wiz|taaweez|amulet)\b/i, hint: "ta'wiz" },
+  { re: /\b(biday['']?ah|bid['']?ah|innovation)\b/i, hint: "bid'ah" },
+  { re: /\b(shirk)\b/i, hint: "shirk" },
+  { re: /\b(oath|qasam)\b/i, hint: "oath/qasam" },
   // urdu script
   { re: /(\u0641\u062A\u0648\u06CC|\u0641\u062A\u0627\u0648\u06CC)/, hint: "فتوی (fatwa)" },
   { re: /(\u062C\u0627\u0626\u0632 \u06C1\u06D2|\u062C\u0627\u0626\u0632 \u0646\u06C1\u06CC\u06BA|\u062D\u0644\u0627\u0644 \u06C1\u06D2|\u062D\u0631\u0627\u0645 \u06C1\u06D2|\u0645\u06A9\u0631\u0648\u06C1)/, hint: "جائز/حلال/حرام/مکروہ" },
@@ -43,9 +57,17 @@ const FATWA_PATTERNS: Array<{ re: RegExp; hint: string }> = [
   { re: /(\u0632\u06A9\u0627\u062A|\u0632\u06A9\u0627\u062A \u06A9\u06CC \u0645\u0642\u062F\u0627\u0631)/, hint: "زکوٰة" },
   { re: /(\u0646\u06A9\u0627\u06C1|\u0637\u0644\u0627\u0642|\u0637\u0644\u0627\u0642 \u06A9\u0627 \u062D\u06A9\u0645)/, hint: "نکاح/طلاق" },
   { re: /(\u0648\u0636\u0648|\u0648\u0636\u0648 \u06A9\u0627 \u062D\u06A9\u0645|\u063A\u0633\u0644|\u063A\u0633\u0644 \u06A9\u0627 \u062D\u06A9\u0645)/, hint: "وضو/غسل" },
+  // additional urdu fiqh terms
+  { re: /(\u0645\u06C2\u0631)/, hint: "مہر (mahr)" },
+  { re: /(\u0639\u062F\u062A)/, hint: "عدت (iddat)" },
+  { re: /(\u0630\u0628\u062D)/, hint: "ذبح (zabihah)" },
+  { re: /(\u0634\u0631\u06A9)/, hint: "شرک (shirk)" },
+  { re: /(\u0628\u062F\u0639\u062A)/, hint: "بدعت (bid'ah)" },
   // roman-urdu
   { re: /\b(ri[sz]wa?|sud|jaiz|jaayaz|booaa|gawah)\b/i, hint: "riwa/sud/jaiz" },
   { re: /\b(qaza|qada|namaz (ka|ki|ke) waqt|roza|roza (rakhna|todna)|zakat|nikah|talaq|wuzu|wudu|ghusl|jumma|jummah)\b/i, hint: "fiqh/ibadat (roman-urdu)" },
+  // additional roman-urdu fiqh terms
+  { re: /\b(mahr|dowry|iddat|iddah|mut['']ah|sawm|salat|salah|sajdah|sujud|khitan|janazah|kafan|mirath|zabihah|qurbani|aqeeqah|ta['']?wiz|taaweez|bid['']?ah|shirk|qasam)\b/i, hint: "fiqh terms (roman-urdu extended)" },
 ];
 
 const INJECTION_PATTERNS: Array<{ re: RegExp; hint: string }> = [
@@ -55,11 +77,21 @@ const INJECTION_PATTERNS: Array<{ re: RegExp; hint: string }> = [
   { re: /\b(system prompt|developer instructions|initial prompt|hidden (prompt|instructions)|base prompt)\b/i, hint: "system prompt" },
   { re: /\b(reveal|show|print|display|expose|leak) (your|the|its|hidden|full|internal) (system |initial |base )?(prompt|instructions?|rules?|guidelines|context)\b/i, hint: "reveal prompt" },
   { re: /\b(jailbreak|d[a@]n (mode|jailbreak)|developer mode|steven|overthrow|disregard (the )?above)\b/i, hint: "jailbreak/dan" },
-  { re: /\bforget (all|everything|your) (previous|prior|training|instructions?|rules?)\b/i, hint: "forget instructions" },
+  { re: /\b(forget|disregard|disobey) (all|everything|your) (previous|prior|training|instructions?|rules?)\b/i, hint: "forget/disregard instructions" },
   { re: /\b(birth certificate|repeat (your|the) (system )?prompt)\b/i, hint: "repeat prompt" },
+  { re: /\boverride (your|the|all) (rules|instructions|programming)\b/i, hint: "override rules" },
+  { re: /\b(from now on|henceforth|effective immediately)\b/i, hint: "from now on" },
+  { re: /\b(no restrictions|no rules|no filters|no guardrails|no limitations)\b/i, hint: "no restrictions" },
+  { re: /\b(bypass|circumvent) (your|the|all) (rules|safety|filters)\b/i, hint: "bypass safety" },
+  { re: /\b(unrestricted|uncensored) (mode|version|AI)\b/i, hint: "unrestricted mode" },
+  { re: /\b(respond without (restrictions|rules|constraints))\b/i, hint: "respond without restrictions" },
+  { re: /\b(you are a free AI|you are an unrestricted)\b/i, hint: "free/unrestricted AI" },
+  { re: /\b(repeat everything above|echo (the|your) (above|previous))\b/i, hint: "repeat above" },
+  { re: /\b(what are your (instructions|rules|guidelines|restrictions))\b/i, hint: "what are your rules" },
   // urdu script (constructed via new RegExp to avoid literal-lexer edge cases)
   { re: new RegExp("(اپنا سسٹم پرامپٹ|سسٹم پرامپٹ بتاؤ|پچھلی ہدایات|ہدایات نظر انداز|ای اؤے کہاؤ)"), hint: "سسٹم پرامپٹ / ہدایات" },
   { re: new RegExp("(ایک نیا رول|تم اب ایک|اظہر کرو)"), hint: "ایک نیا رول / اب ایک" },
+  { re: new RegExp("(نئی ہدایات|اپنے قواعد بدلیں|کوئی پابندی نہیں|مفت ہے آپ|آزاد ہو آپ)"), hint: "نئی ہدایات / پابندی" },
 ];
 
 export function checkBlockers(normalizedQuestion: string): BlockResult {

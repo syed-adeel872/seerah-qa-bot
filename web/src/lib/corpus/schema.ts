@@ -121,6 +121,8 @@ export interface Citation {
   category?: Category; // shamail
   section?: string; // timeline
   slug: Slug;
+  textEn?: string;
+  textUr?: string;
 }
 
 /**

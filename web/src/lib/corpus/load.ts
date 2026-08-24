@@ -55,6 +55,12 @@ function shamailCitation(e: ShamailEntry): Citation {
     hawala: { en: e.en.hadeesHawala, ur: e.ur.hadeesHawala },
     category: { id: e.category.id, name: { en: e.category.name.en, ur: e.category.name.ur } },
     slug: e.slug,
+    textEn: [e.en.title, e.en.hadeesTarjama, e.en.hadeesHawala, ...e.en.points, e.en.hikayat]
+      .filter(Boolean)
+      .join("\n\n"),
+    textUr: [e.ur.title, e.ur.hadeesTarjama, e.ur.hadeesHawala, ...e.ur.points, e.ur.hikayat]
+      .filter(Boolean)
+      .join("\n\n"),
   };
 }
 
@@ -65,6 +71,12 @@ function timelineCitation(e: TimelineEntry): Citation {
     title: { en: e.en.title, ur: e.ur.title || e.en.title },
     section: e.en.section || undefined,
     slug: e.slug,
+    textEn: [e.en.title, e.en.description, ...e.en.content.map((b) => b.content_text)]
+      .filter(Boolean)
+      .join("\n\n"),
+    textUr: [e.ur.title, e.ur.description, ...(e.ur.content ?? []).map((b) => b.content_text)]
+      .filter(Boolean)
+      .join("\n\n"),
   };
 }
 

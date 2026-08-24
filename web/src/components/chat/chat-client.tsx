@@ -177,10 +177,10 @@ function SourceModal({ citation, index, onClose }: { citation: Citation; index: 
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg rounded-2xl border border-emerald-500/20 bg-gray-950 shadow-2xl shadow-emerald-500/10"
+        className="w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl border border-emerald-500/20 bg-gray-950 shadow-2xl shadow-emerald-500/10"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-800/60 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-gray-800/60 px-5 py-4 shrink-0">
           <div className="flex items-center gap-2">
             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-[11px] font-bold text-emerald-300">
               {index + 1}
@@ -201,8 +201,8 @@ function SourceModal({ citation, index, onClose }: { citation: Citation; index: 
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-5 py-4 space-y-3">
+        {/* Scrollable Body */}
+        <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1 min-h-0">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted/50 mb-1">English</p>
             <p className="text-sm font-medium text-gray-100 leading-relaxed">{citation.title.en}</p>
@@ -225,10 +225,22 @@ function SourceModal({ citation, index, onClose }: { citation: Citation; index: 
               Category: <span className="text-emerald-300/70">{citation.category.name.en}</span>
             </div>
           )}
+          {citation.textEn && (
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted/50 mb-1.5">Full Text</p>
+              <div className="rounded-lg bg-gray-800/50 px-4 py-3 text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">{citation.textEn}</div>
+            </div>
+          )}
+          {citation.textUr && (
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted/50 mb-1.5" dir="rtl">مکمل متن</p>
+              <div className="font-ur rounded-lg bg-gray-800/50 px-4 py-3 text-sm text-gray-200 leading-relaxed whitespace-pre-wrap text-right" dir="rtl">{citation.textUr}</div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-800/60 px-5 py-3 flex justify-end">
+        <div className="border-t border-gray-800/60 px-5 py-3 flex justify-end shrink-0">
           <button
             onClick={onClose}
             className="rounded-lg bg-emerald-600/15 px-4 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-600/25 cursor-pointer"

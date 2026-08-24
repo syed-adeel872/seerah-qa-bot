@@ -409,7 +409,7 @@ async function answerFromQuery(
   // confirmed support set: best doc + close runner-ups
   const confirmed = candidates
     .filter((c) => c.hybridScore >= best.hybridScore * 0.4)
-    .slice(0, 3);
+    .slice(0, 6);
 
   const sourcesForText = confirmed.map((c) => ({ doc: c.doc }));
 

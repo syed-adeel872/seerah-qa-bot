@@ -99,7 +99,7 @@ The Seerah Q&A Bot is a **full-stack Next.js application** deployed on Vercel. I
 │                              │                                      │
 │  ┌──────────────────────────▼──────────────────────────────────┐   │
 │  │  6. POST-LLM SAFETY (Layer 2)                               │   │
-│  │     isLlmRefusal(text) → 15 refusal patterns               │   │
+│  │     isLlmRefusal(text) → 26 refusal patterns               │   │
 │  │     → REFUSAL? → status="blocked", citations=[]             │   │
 │  └──────────────────────────┬──────────────────────────────────┘   │
 │                              │                                      │
@@ -114,10 +114,10 @@ The Seerah Q&A Bot is a **full-stack Next.js application** deployed on Vercel. I
 │                                                                     │
 │  showCitations = status === "answered" && citations.length > 0     │
 │                                                                     │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐               │
-│  │ SourceChips   │ │ SourceList   │ │ ShareButton  │               │
-│  │ (if answered) │ │ (if answered)│ │ (if answered)│               │
-│  └──────────────┘ └──────────────┘ └──────────────┘               │
+│  ┌──────────────┐ ┌──────────────┐                                 │
+│  │ SourceChips   │ │ ShareButton  │                                 │
+│  │ (if answered) │ │ (if answered)│                                 │
+│  └──────────────┘ └──────────────┘                                 │
 │                                                                     │
 │  ┌──────────────┐                                                  │
 │  │ SourceModal   │  ← clicking a chip opens this                   │
@@ -146,7 +146,6 @@ layout.tsx (h-full overflow-hidden)
         │     │     ├── AssistantBubble (left-aligned)
         │     │     │     ├── Answer Text
         │     │     │     ├── SourceChips (clickable → modal)
-        │     │     │     ├── SourceList (expanded references)
         │     │     │     ├── CopyButton
         │     │     │     ├── ShareButton
         │     │     │     └── SourceModal (citation detail)
@@ -161,12 +160,26 @@ layout.tsx (h-full overflow-hidden)
 
 | File | Role |
 |------|------|
-| `chat-client.tsx` | Main chat UI — CopyButton, ShareButton, SourceModal, SourceChips, SourceList, AssistantBubble |
+| `chat-client.tsx` | Main chat UI — CopyButton, ShareButton, SourceModal, SourceChips, AssistantBubble |
 | `disclaimer.tsx` | Async server component — persistent footer |
 | `samples.ts` | Sample question data |
 | `globals.css` | CSS variables, gradients, `.glow-card`, `.input-glow` |
 | `page.tsx` | Landing page — flex column layout with radial gradient |
 | `layout.tsx` | Root layout — `h-full overflow-hidden` |
+
+### Frontend Features
+
+#### `renderBoldText()`
+
+Markdown bold parsing in assistant bubbles. Converts `**text**` to `<strong>` elements for proper rendering.
+
+#### `AbortController`
+
+Request cancellation on new question. When a user sends a new question while a previous request is in flight, the AbortController cancels the pending request to prevent race conditions and stale responses.
+
+#### SourceModal Scrollable Text Boxes
+
+Citation detail modal uses `max-h-48 overflow-y-auto` for scrollable text containers. This ensures long Hawala references can be read without overflowing the modal.
 
 ---
 
@@ -187,6 +200,19 @@ export async function POST(req: NextRequest) {
 - Runtime: Node.js
 - Dynamic: force-dynamic (no caching)
 - Validation: Zod schema
+- Error handling: try/catch with proper HTTP status codes
+
+### Security Headers
+
+**`next.config.ts`**
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| X-Frame-Options | DENY | Prevents clickjacking |
+| X-Content-Type-Options | nosniff | Prevents MIME type sniffing |
+| Referrer-Policy | strict-origin-when-cross-origin | Controls referrer information |
+| Permissions-Policy | camera=(), microphone=(), geolocation=() | Disables unnecessary features |
+| X-XSS-Protection | 1; mode=block | Enables XSS filtering |
 
 ### Pipeline Orchestration
 
@@ -203,6 +229,10 @@ answerQuestion(rawQuestion)
   → answerFromQuery(rewritten)   // Pass 2: re-retrieval
   → return best answer
 ```
+
+### `sanitizeRomanUrdu()`
+
+Non-ASCII stripping for Roman Urdu output. Removes Urdu script characters and other non-ASCII characters from Roman Urdu responses to ensure clean Latin-only output.
 
 ---
 
@@ -246,7 +276,7 @@ Ranking: `hybridScore desc → coverage desc → titleOverlap desc`
 | Layer | Location | Timing | What It Does |
 |-------|----------|--------|--------------|
 | **Layer 1** | `blockers.ts` | Pre-retrieval | 30+ regex patterns block fatwa/injection queries |
-| **Layer 2** | `answer.ts` | Post-LLM | 15 refusal patterns detect LLM-generated refusals, strip citations |
+| **Layer 2** | `answer.ts` | Post-LLM | 26 refusal patterns detect LLM-generated refusals, strip citations |
 | **Layer 3** | `chat-client.tsx` | Rendering | `showCitations` gate hides UI for non-"answered" responses |
 
 ### Data Flow Safety

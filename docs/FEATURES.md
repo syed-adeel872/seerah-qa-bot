@@ -77,14 +77,6 @@ Each grounded answer shows:
 [1] The Prophet's Clothing    [2] daily habits    [3] character traits
 ```
 
-**Source List** — expanded reference below chips:
-```
-[1] The Prophet's Clothing — لباس نبی ﷺ
-    Hawala: Shamail al-Tirmidhi, Hadith No. 123
-[2] Daily Habits — عادات روزمرہ
-    Hawala: Shamail al-Tirmidhi, Hadith No. 456
-```
-
 **Hawala Modal** — clicking a chip opens a detailed modal:
 - Source type badge (Shamail / Seerah Timeline)
 - English title
@@ -233,7 +225,7 @@ For fatwa queries, the bot shows:
 
 ### Post-LLM Refusal Detection
 
-**15 regex patterns** detect when the LLM generated a refusal:
+**26 regex patterns** detect when the LLM generated a refusal:
 
 ```typescript
 // English
@@ -304,7 +296,7 @@ When detected:
 |--------|----------|-----------|
 | `SYSTEM_PROMPT_EN` | English | 8 rules: fatwa redirect, out-of-corpus, semantic synthesis, laser-focused, ban on lazy fallbacks |
 | `SYSTEM_PROMPT_ROMAN_UR` | Roman Urdu | 9 rules: includes mandatory context usage, flexible semantic synthesis |
-| `SYSTEM_PROMPT_UR` | Urdu | 9 rules: post-LLM refusal enforcement, mandatory context usage |
+| `SYSTEM_PROMPT_UR` | Urdu | 8 rules: post-LLM refusal enforcement, mandatory context usage |
 
 ### Semantic Synthesis Rule (Most Important)
 
@@ -313,6 +305,12 @@ When detected:
 ### Mandatory Context Usage Rule
 
 > "If passages are provided to you in the 'Retrieved corpus passages' section, you are STRICTLY FORBIDDEN from saying 'I don't have details' or any absence message. You MUST synthesize a descriptive answer from those passages."
+
+### Script Purity Rule (Roman Urdu)
+
+**Rule 9 — "SCRIPT KI PAAKIZGI"** — Latin-only output enforcement.
+
+Roman Urdu responses must contain only Latin characters. No Urdu/Arabic script characters are permitted in Roman Urdu output.
 
 ### Deterministic Fallback
 
@@ -363,6 +361,99 @@ hybridScore = bm25Score + (semScore − 0.45) × 120
 ```
 
 Strong semantic matches can overtake BM25 gaps of up to ~30 points.
+
+---
+
+## 10. Expanded Guardrails
+
+### Fatwa Prevention (Expanded)
+
+**34+ deterministic regex patterns** across 3 languages:
+
+| Language | Examples |
+|----------|----------|
+| English | `fatwa`, `halal`, `haram`, `qaza`, `namaz timing`, `roza`, `zakat`, `nikah`, `talaq`, `wudu`, `ghusl`, `jummah`, `mahr`, `iddat`, `sawm`, `salat`, `sajdah`, `khitan`, `janazah`, `zabihah`, `qurbani`, `ta'wiz`, `bid'ah`, `shirk`, `qasam` |
+| Urdu script | `فتویٰ`, `حلال`, `حرام`, `قضا`, `نماز کا وقت`, `روزہ`, `زکوٰة`, `نکاح`, `طلاق`, `وضو`, `غسل`, `جمعہ`, `مہر`, `عدت`, `صوام`, `صلوٰت`, `سجدہ`, `ختان`, `جنازہ`, `ذبحیہ`, `قربانی`, `تعویذ`, `بدعت`, `شرک`, `قسم` |
+| Roman Urdu | `fatwa`, `halal`, `haram`, `qaza`, `namaz timing`, `roza`, `zakat`, `nikah`, `talaq`, `wudu`, `ghusl`, `jummah`, `mahr`, `iddat`, `sawm`, `salat`, `sajdah`, `khitan`, `janazah`, `zabihah`, `qurbani`, `ta'wiz`, `bid'ah`, `shirk`, `qasam` |
+
+### Injection Prevention
+
+**19 patterns** detect prompt injection attempts:
+
+| Language | Examples |
+|----------|----------|
+| English | `ignore previous instructions`, `you are now`, `reveal system prompt`, `jailbreak`, `developer mode` |
+| Urdu script | Urdu-script variants of injection phrases |
+
+### Post-LLM Refusal Detection (Expanded)
+
+**26 regex patterns** detect when the LLM generated a refusal:
+
+- English: `shari'i masla`, `religious ruling`, `consult a qualified scholar`, lazy fallbacks, scope hedging
+- Roman Urdu: `daaira-e-kaam mein nahi`, `mustanad aalim`, `tafseel nahi`
+- Urdu script: `شرعی فتویٰ`, `مستند عالم`, lazy fallbacks
+- System prompt leakage: `system prompt`, `my rules are`, `i am told to`
+
+When detected:
+- `status` → `"blocked"`
+- `citations` → `[]` (stripped)
+- Frontend hides all citation UI
+
+---
+
+## 11. Response Rendering Enhancements
+
+### Bold Text Parsing
+
+**`renderBoldText()`** — parses `**bold**` markdown into `<strong>` elements in assistant responses.
+
+Allows the LLM to produce bold-formatted text that renders properly in the chat UI.
+
+### Sanitize Roman Urdu Output
+
+**`sanitizeRomanUrdu()`** — strips all non-ASCII characters from Roman Urdu LLM output to prevent cross-script corruption.
+
+Ensures Roman Urdu responses remain purely Latin script, preventing accidental Urdu/Arabic characters from leaking into Roman Urdu output.
+
+---
+
+## 12. Race Condition Prevention
+
+### AbortController for In-Flight Requests
+
+When a user sends a new question while a previous request is still in flight, the app cancels the previous fetch using `AbortController`:
+
+1. User sends question A → `fetch()` starts, `AbortController` stored
+2. User sends question B before A completes → A is aborted via `abort()`
+3. B proceeds normally
+
+Prevents stale responses from rendering out of order.
+
+---
+
+## 13. SourceModal Scrollable Text Boxes
+
+English and Urdu full text in the SourceModal are rendered in separate scrollable containers:
+
+- `max-h-48` caps height
+- `overflow-y-auto` enables vertical scroll
+- `thin-scrollbar` provides slim scrollbar styling
+
+Long entries no longer blow out the modal layout.
+
+---
+
+## 14. Security Headers
+
+The following security headers are configured for the deployment:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `X-Frame-Options` | `DENY` | Prevents clickjacking (iframe embedding) |
+| `X-Content-Type-Options` | `nosniff` | Prevents MIME type sniffing |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Controls referrer information leakage |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Restricts browser feature access |
+| `X-XSS-Protection` | `1; mode=block` | Legacy XSS filter (defense in depth) |
 
 ---
 

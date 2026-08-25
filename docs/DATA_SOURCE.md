@@ -133,7 +133,7 @@ Only genuine, grounded answers show citations.
 
 ## Fatwa & Ruling Prevention
 
-### Two-Layer Safety System
+### Three-Layer Safety System
 
 The bot has a **three-layer defense** against generating religious rulings:
 
@@ -156,7 +156,7 @@ When a match is found, the bot immediately returns a refusal with scholar redire
 
 **File:** `web/src/lib/engine/answer.ts`
 
-15 regex patterns that detect when the LLM generated a refusal instead of a genuine answer:
+26 regex patterns that detect when the LLM generated a refusal instead of a genuine answer:
 
 ```typescript
 const LLM_REFUSAL_PATTERNS: RegExp[] = [
@@ -165,7 +165,7 @@ const LLM_REFUSAL_PATTERNS: RegExp[] = [
   /consult\s+a\s+qualified\s+(scholar|aalim|mufti)/i,
   /can\s+only\s+answer\s+(from|questions\s+from)\s+(the\s+)?(seerah|shamail)/i,
   /daaira[-\s]?e[-\s]?kaam\s+mein\s+nahi/i,
-  // ... 15 patterns total
+  // ... 26 patterns total
 ];
 ```
 
@@ -182,7 +182,7 @@ When detected:
 const showCitations = answer.status === "answered" && answer.citations.length > 0;
 ```
 
-Hides `SourceChips`, `SourceList`, and `ShareButton` for all non-"answered" responses.
+Hides `SourceChips` and `ShareButton` for all non-"answered" responses.
 
 ### The Fatwa Redirect
 

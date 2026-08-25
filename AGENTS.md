@@ -20,7 +20,7 @@
 
 30+ regex patterns evaluated BEFORE any retrieval or generation:
 
-- **Fatwa patterns:** `fatwa`, `halal`, `haram`, `makruh`, `qaza`, `qada`, `namaz timing`, `roza`, `zakat`, `nikah`, `talaq`, `wudu`, `ghusl`, `jummah` + Urdu script + Roman Urdu variants
+- **Fatwa patterns:** `fatwa`, `halal`, `haram`, `makruh`, `qaza`, `qada`, `namaz timing`, `roza`, `zakat`, `nikah`, `talaq`, `wudu`, `ghusl`, `jummah`, `mahr`, `iddat`, `sawm`, `salat`, `sajdah`, `khitan`, `janazah`, `zabihah`, `qurbani`, `ta'wiz`, `bid'ah`, `shirk`, `qasam` + Urdu script + Roman Urdu variants
 - **Injection patterns:** `ignore previous instructions`, `you are now`, `reveal system prompt`, `jailbreak`, `developer mode` + Urdu script variants
 
 When matched: immediate refusal with tri-language text + scholar redirect. No retrieval, no generation.
@@ -29,11 +29,12 @@ When matched: immediate refusal with tri-language text + scholar redirect. No re
 
 **File:** `web/src/lib/engine/answer.ts`
 
-15 regex patterns that detect LLM-generated refusals:
+26 regex patterns that detect LLM-generated refusals:
 
-- English: `shari'i masla`, `religious ruling`, `consult a qualified scholar`
-- Roman Urdu: `daaira-e-kaam mein nahi`, `mustanad aalim`
-- Urdu script: `شرعی فتویٰ`, `مستند عالم`
+- English: `shari'i masla`, `religious ruling`, `consult a qualified scholar`, lazy fallbacks, scope hedging
+- Roman Urdu: `daaira-e-kaam mein nahi`, `mustanad aalim`, `tafseel nahi`
+- Urdu script: `شرعی فتویٰ`, `مستند عالم`, lazy fallbacks
+- System prompt leakage: `system prompt`, `my rules are`, `i am told to`
 
 When detected: `status` → `"blocked"`, `citations` → `[]` (stripped).
 
@@ -90,7 +91,7 @@ clothing = {clothing, clothes, libas, kapra, لباس, کپڑا, ...}
 
 ### Roman Urdu (`SYSTEM_PROMPT_ROMAN_UR`)
 
-Same 9 rules adapted for Roman Urdu, including mandatory context usage.
+Same 9 rules adapted for Roman Urdu, including mandatory context usage and Rule 9 (Script Purity — Latin-only output).
 
 ### Urdu (`SYSTEM_PROMPT_UR`)
 

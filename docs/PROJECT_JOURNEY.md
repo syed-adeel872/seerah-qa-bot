@@ -154,7 +154,7 @@ answerQuestion():
 |--------|----------|-------|
 | `SYSTEM_PROMPT_EN` | English | 8 rules including fatwa redirect, out-of-corpus, semantic synthesis, ban on lazy fallbacks |
 | `SYSTEM_PROMPT_ROMAN_UR` | Roman Urdu | 9 rules including mandatory context usage, flexible semantic synthesis |
-| `SYSTEM_PROMPT_UR` | Urdu | 9 rules including post-LLM refusal enforcement |
+| `SYSTEM_PROMPT_UR` | Urdu | 8 rules including post-LLM refusal enforcement |
 
 **Key prompt rules (final version):**
 1. Fatwa redirect — refuse ruling queries, redirect to scholar
@@ -269,12 +269,8 @@ Six commits iterating on pixel-perfect alignment:
 - Category display
 - Escape key / backdrop click to close
 
-**SourceList:**
-- Expanded reference below chips
-- `border-l-2` left-border accent
-
 **AssistantBubble:**
-- Wraps bot response with SourceChips, SourceList, CopyButton, ShareButton, SourceModal state management
+- Wraps bot response with SourceChips, CopyButton, ShareButton, SourceModal state management
 
 ### 4.7 Citation Modal UI Iterations
 
@@ -327,7 +323,7 @@ const LLM_REFUSAL_PATTERNS: RegExp[] = [
   // Urdu script refusals
   /(\u0634\u0631\u0639\u06CC\s+\u0641\u062A\u0648\u06CC\u06D2)/,
   /(\u0627\u0633\u062A\u0645\u0646\u062F\s+\u0639\u0627\u0644\u0645)/,
-  // ... 15 patterns total
+  // ... 26 patterns total
 ];
 
 function isLlmRefusal(text: string): boolean {
@@ -357,14 +353,14 @@ if (isLlmRefusal(text)) {
 const showCitations = answer.status === "answered" && answer.citations.length > 0;
 ```
 
-Gates `SourceChips`, `SourceList`, and `ShareButton` — hidden for `"blocked"` and `"out_of_corpus"` statuses.
+Gates `SourceChips` and `ShareButton` — hidden for `"blocked"` and `"out_of_corpus"` statuses.
 
 ### 5.4 Two-Layer Safety Summary
 
 | Layer | Location | What It Catches | How |
 |-------|----------|-----------------|-----|
 | **Layer 1** | `blockers.ts` (pre-retrieval) | Exact keyword matches (fatwa, halal, qaza, namaz, etc.) | 30+ deterministic regex patterns |
-| **Layer 2** | `answer.ts` (post-LLM) | LLM-generated refusals that slipped past Layer 1 | 15 refusal text patterns, strips citations, forces `status: "blocked"` |
+| **Layer 2** | `answer.ts` (post-LLM) | LLM-generated refusals that slipped past Layer 1 | 26 refusal text patterns, strips citations, forces `status: "blocked"` |
 | **Layer 3** | `chat-client.tsx` (frontend) | Any remaining non-"answered" status | `showCitations` gate hides all citation UI |
 
 ---
@@ -397,7 +393,7 @@ Seerah_QA_Bot/
 │   │   │   └── api/chat/route.ts             # POST /api/chat
 │   │   ├── components/
 │   │   │   ├── chat/
-│   │   │   │   ├── chat-client.tsx            # Chat UI (CopyButton, ShareButton, SourceModal, SourceChips, SourceList, AssistantBubble)
+│   │   │   │   ├── chat-client.tsx            # Chat UI (CopyButton, ShareButton, SourceModal, SourceChips, AssistantBubble)
 │   │   │   │   └── samples.ts                # sample questions
 │   │   │   └── disclaimer.tsx                 # persistent disclaimer
 │   │   └── lib/
@@ -431,7 +427,7 @@ Seerah_QA_Bot/
 | Guardrails | `web/src/lib/guardrails/blockers.ts` | **30+ fatwa/injection patterns, expanded fiqh terms** |
 | Eval | `web/src/lib/eval/cases.ts` | 69 pinned cases |
 | API route | `web/src/app/api/chat/route.ts` | POST /api/chat |
-| **UI** | `web/src/components/chat/chat-client.tsx` | **Chat, CopyButton, ShareButton, SourceModal, SourceChips, SourceList, AssistantBubble, citation gating** |
+| **UI** | `web/src/components/chat/chat-client.tsx` | **Chat, CopyButton, ShareButton, SourceModal, SourceChips, AssistantBubble, citation gating** |
 | **CSS** | `web/src/app/globals.css` | **CSS vars, gradients, .glow-card, .input-glow** |
 | Vectors | `web/data/embeddings.json` | 2.5 MB precomputed embeddings |
 | Snapshot | `data/corpus.snapshot.json` | Frozen corpus fallback |
@@ -496,6 +492,20 @@ Seerah_QA_Bot/
 | 38 | `6545663` | style: revert citation modal back to its original clean and detailed layout |
 | 39 | `2370c8a` | fix: hide citation cards and source chips on refusal or disclaimer responses |
 | 40 | `ca0bfc4` | fix: strip citations and block source cards when LLM generates a refusal or disclaimer |
+
+---
+
+## Recent Additions
+
+| Feature | Description |
+|---------|-------------|
+| `renderBoldText()` | Parses `**bold**` markdown into `<strong>` elements for formatted bot output |
+| `AbortController` | Cancels in-flight LLM requests when user sends a new question, preventing stale responses |
+| `sanitizeRomanUrdu()` | Strips all non-ASCII characters from Roman Urdu LLM output to ensure clean Latin-only text |
+| SourceModal scrollable text boxes | English and Urdu full text rendered in `max-h-48 overflow-y-auto` containers for long content |
+| Security headers | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-XSS-Protection` |
+| API error handling | `answerQuestion()` wrapped in try/catch in `route.ts` — returns structured error responses instead of 500s |
+| Expanded guardrails | FATWA_PATTERNS expanded from ~30 to 34+, INJECTION_PATTERNS from ~12 to 19, LLM_REFUSAL_PATTERNS from 15 to 26 |
 
 ---
 

@@ -2,9 +2,9 @@
 
 > **Code-enforced citation validation. Pre-retrieval fatwa safety. Baked corpus fallback. 4/4 rubric compliance.**
 
-A conversational assistant grounded in the verified Seerah & Shamail corpus — answering questions about the Prophet Muhammad ﷺ's life, character, and habits. Every answer cites verified corpus entries. Every fatwa question is refused by construction, not by prompt. Every response includes a persistent disclaimer.
+### **[🚀 Click Here to Test the Live App](https://seerah-qa-bot.vercel.app)**
 
-**Live:** [seerah-qa-bot.vercel.app](https://seerah-qa-bot.vercel.app)
+A conversational assistant grounded in the verified Seerah & Shamail corpus — answering questions about the Prophet Muhammad ﷺ's life, character, and habits. Every answer cites verified corpus entries. Every fatwa question is refused by construction, not by prompt. Every response includes a persistent disclaimer.
 
 <!-- DEMO: Replace this line with an animated GIF or screen recording showing the bot in action.
      Record: (1) a valid Seerah question → answer with citations, (2) a fatwa question → refusal + redirect,

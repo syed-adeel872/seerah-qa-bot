@@ -1,7 +1,24 @@
 {
-  "name": "web",
+  "name": "seerah-qa-bot",
   "version": "0.1.0",
   "private": true,
+  "description": "Enterprise-grade, mathematically grounded Seerah Q&A bot with strict code-enforced citation validation and fatwa safety guardrails.",
+  "homepage": "https://seerah-qa-bot.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syed-adeel872/seerah-qa-bot.git"
+  },
+  "keywords": [
+    "nextjs",
+    "typescript",
+    "ai",
+    "rag",
+    "seerah",
+    "islamic-studies",
+    "tailwindcss",
+    "openai",
+    "gemini"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
